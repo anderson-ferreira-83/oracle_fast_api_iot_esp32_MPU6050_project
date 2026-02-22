@@ -3652,14 +3652,24 @@ const TransitionTest = {
   STEPS: null,
 
   _generateSteps() {
-    const labels = _getModelLabels();
+    // Custom order field overrides the global model label order.
+    // Supports 3-stage protocol: ROT_ON only, ROT_OFF only, or stress (cross-domain).
+    const customRaw = (document.getElementById('ttCfgCustomOrder')?.value || '').trim();
+    let labels;
+    if (customRaw) {
+      const valid = new Set(_getModelLabels());
+      const parsed = customRaw.split(',').map(s => s.trim().toUpperCase()).filter(s => valid.has(s));
+      labels = parsed.length >= 2 ? parsed : _getModelLabels();
+    } else {
+      labels = _getModelLabels();
+    }
     const steps = [{ from: null, to: labels[0], label: `Coloque em ${_classShort(labels[0])} e aguarde` }];
-    // Forward: go up through all adjacent pairs
+    // Forward: go through all adjacent pairs in the chosen order
     for (let i = 0; i < labels.length - 1; i++) {
       steps.push({ from: labels[i], to: labels[i + 1],
         label: `Mude para ${_classShort(labels[i + 1])}` });
     }
-    // Backward: come back down through all adjacent pairs
+    // Backward: return through all adjacent pairs in reverse
     for (let i = labels.length - 1; i > 0; i--) {
       steps.push({ from: labels[i], to: labels[i - 1],
         label: `Volte para ${_classShort(labels[i - 1])}` });
@@ -3681,6 +3691,7 @@ const TransitionTest = {
       prepareS:   parseFloat(document.getElementById('ttCfgPrepare')?.value) || 5,
       tag: (document.getElementById('ttCfgTag')?.value || '').trim() || null,
       notes: (document.getElementById('ttCfgNotes')?.value || '').trim() || null,
+      customOrder: (document.getElementById('ttCfgCustomOrder')?.value || '').trim() || null,
     };
   },
 
@@ -4300,6 +4311,36 @@ const TransitionTest = {
     return summarizeByDirection(results);
   },
 };
+
+// =============================================================================
+// TRANSITION TEST — 3-STAGE PRESETS
+// =============================================================================
+// Fills the ttCfgCustomOrder field with the appropriate label sequence.
+// Stage 0 = default (clears field, uses global model order)
+// Stage 1 = ROT_ON only  (LOW→MEDIUM→HIGH, reverse, FAN_OFF)
+// Stage 2 = ROT_OFF only (same pattern with ROT_OFF suffix)
+// Stage 3 = Stress — every adjacent pair is a cross-domain transition
+function _ttPreset(stage) {
+  const el = document.getElementById('ttCfgCustomOrder');
+  if (!el) return;
+  const PRESETS = {
+    0: '',  // default — let _generateSteps use _getModelLabels()
+    1: 'LOW_ROT_ON,MEDIUM_ROT_ON,HIGH_ROT_ON,FAN_OFF',
+    2: 'LOW_ROT_OFF,MEDIUM_ROT_OFF,HIGH_ROT_OFF,FAN_OFF',
+    3: 'FAN_OFF,HIGH_ROT_ON,LOW_ROT_OFF,MEDIUM_ROT_ON,HIGH_ROT_OFF,LOW_ROT_ON,MEDIUM_ROT_OFF',
+  };
+  const seq = PRESETS[stage] ?? '';
+  el.value = seq;
+  // Reflect back to user via placeholder colour hint
+  el.style.borderColor = seq ? '#a78bfa' : '';
+  const labels = {
+    0: 'Padrão (todos)',
+    1: 'Etapa 1 · ROT ON (LO→MD→HI→reverse→OFF)',
+    2: 'Etapa 2 · ROT OFF (LO→MD→HI→reverse→OFF)',
+    3: 'Etapa 3 · Stress (cross-domain aleatório)',
+  };
+  console.log(`[TransitionTest] Preset carregado: ${labels[stage] ?? stage}`);
+}
 
 // =============================================================================
 // STABILITY / SOAK TEST (HOLD EACH STATE FOR N SECONDS)

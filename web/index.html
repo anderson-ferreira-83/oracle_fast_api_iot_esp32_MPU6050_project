@@ -693,6 +693,19 @@
               <label class="tt-tooltip" data-tooltip="Observacoes curtas sobre o contexto do teste">Observacoes</label>
               <input type="text" id="ttCfgNotes" placeholder="ex: ajuste de ganho">
             </div>
+            <div class="tt-config-item" style="grid-column:span 4">
+              <label class="tt-tooltip" data-tooltip="Ordem personalizada de classes para o teste (separadas por vírgula). Vazio = ordem padrão do modelo. Use os botões de etapa para preencher automaticamente.">Ordem de Classes (opcional)</label>
+              <input type="text" id="ttCfgCustomOrder" placeholder="ex: LOW_ROT_ON,MEDIUM_ROT_ON,HIGH_ROT_ON,FAN_OFF" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div class="tt-config-item" style="grid-column:span 4">
+              <label>Etapas Pré-configuradas</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                <button class="btn" style="font-size:0.75rem;padding:4px 10px;background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#a78bfa;" onclick="_ttPreset(1)">Etapa 1 · ROT ON</button>
+                <button class="btn" style="font-size:0.75rem;padding:4px 10px;background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#a78bfa;" onclick="_ttPreset(2)">Etapa 2 · ROT OFF</button>
+                <button class="btn" style="font-size:0.75rem;padding:4px 10px;background:rgba(255,165,0,0.15);border-color:#ffa500;color:#ffa500;" onclick="_ttPreset(3)">Etapa 3 · Stress</button>
+                <button class="btn" style="font-size:0.75rem;padding:4px 10px;opacity:0.55;" onclick="_ttPreset(0)">Padrão (todos)</button>
+              </div>
+            </div>
           </div>
         </details>
 
