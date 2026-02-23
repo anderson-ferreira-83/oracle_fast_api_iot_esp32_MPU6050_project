@@ -248,6 +248,78 @@
       color: #b45309;
     }
     .ctrl-btn-mini { padding: 10px 16px; font-size: 0.85rem; }
+
+    /* --- Banner de finalidade dos dados (MONITORING / TRAINING) --- */
+    .purpose-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1px solid;
+      margin-bottom: 10px;
+      transition: background 0.35s ease, border-color 0.35s ease, color 0.35s ease;
+      cursor: default;
+    }
+    .purpose-banner.purpose-monitoring {
+      background: rgba(16, 185, 129, 0.10);
+      border-color: rgba(16, 185, 129, 0.38);
+    }
+    .purpose-banner.purpose-training {
+      background: rgba(245, 158, 11, 0.11);
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+    .purpose-icon {
+      font-size: 0.82rem;
+      line-height: 1;
+      transition: color 0.35s ease;
+    }
+    .purpose-banner.purpose-monitoring .purpose-icon { color: #10b981; }
+    .purpose-banner.purpose-training  .purpose-icon { color: #f59e0b; }
+    .purpose-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      transition: color 0.35s ease;
+    }
+    .purpose-banner.purpose-monitoring .purpose-label { color: #059669; }
+    .purpose-banner.purpose-training  .purpose-label { color: #b45309; }
+    .purpose-table {
+      font-size: 0.70rem;
+      font-weight: 400;
+      opacity: 0.65;
+      color: inherit;
+    }
+    .purpose-manual-link {
+      font-size: 0.70rem;
+      font-weight: 400;
+      opacity: 0.5;
+      cursor: pointer;
+      text-decoration: underline dotted;
+      background: none;
+      border: none;
+      font-family: inherit;
+      color: inherit;
+      padding: 0;
+      transition: opacity 0.2s;
+    }
+    .purpose-manual-link:hover { opacity: 1; }
+    .purpose-finish-btn {
+      margin-left: auto;
+      padding: 5px 13px;
+      font-size: 0.76rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      background: rgba(180, 83, 9, 0.13);
+      color: #b45309;
+      border: 1px solid rgba(180, 83, 9, 0.38);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    .purpose-finish-btn:hover { background: #b45309; color: #fff; }
     .ctrl-btn-ingest-pause {
       background: rgba(245, 158, 11, 0.14);
       border-color: rgba(245, 158, 11, 0.55);
@@ -1192,13 +1264,32 @@
         <span class="ingest-badge ingest-on" id="ingestBadge" style="margin-left:auto;">DB: ON</span>
         <a class="card-doc-btn" href="doc-etapa1.html" target="_blank" title="Ver documentacao desta etapa">?</a>
       </div>
+
+      <!-- Banner de finalidade: MONITORING (padrao) ou TRAINING (coleta ativa) -->
+      <div id="dataPurposeBanner" class="purpose-banner purpose-monitoring" aria-live="polite">
+        <span class="purpose-icon">◉</span>
+        <span class="purpose-label" id="purposeLabel">MONITORAMENTO</span>
+        <span class="purpose-table" id="purposeTable">sensor_monitoring_data</span>
+        <!-- link de override manual (borda de MONITORING: muda para TRAINING) -->
+        <button class="purpose-manual-link" id="purposeManualToggle"
+          onclick="setDataPurpose('TRAINING')"
+          title="Ativar modo coleta de treino manualmente (sem criar nova sessao)">mudar para treino</button>
+        <!-- botao de conclusao: visivel apenas em modo TRAINING -->
+        <button class="purpose-finish-btn" id="btnFinalizarTreino"
+          onclick="finalizarTreino()"
+          title="Exportar CSV desta coleta e voltar ao modo Monitoramento"
+          style="display:none;">↩ Finalizar Treino</button>
+      </div>
+
       <div class="prep-actions-row" aria-label="Acoes de coleta">
-        <button class="ctrl-btn ctrl-btn-new" onclick="newCollection()" title="Cria nova sessao de coleta com ID unico baseado na taxa atual">Nova Coleta</button>
+        <button class="ctrl-btn ctrl-btn-new" onclick="newCollection()"
+          title="Cria nova sessao de coleta rotulada (ativa modo Treino automaticamente)">▶ Nova Coleta</button>
         <button class="ctrl-btn ctrl-btn-ingest-pause" id="btnIngestPause" onclick="pauseIngest()" title="Pausa a gravacao de dados no Oracle XE">Pausar DB</button>
         <button class="ctrl-btn ctrl-btn-ingest-resume" id="btnIngestResume" onclick="resumeIngest()" disabled title="Retoma a gravacao de dados no Oracle XE">Retomar DB</button>
         <button class="ctrl-btn ctrl-btn-export" id="btnExportCsv" onclick="exportToCSV()" title="Exporta manualmente a coleta atual para CSV (util para checkpoints durante a coleta)">Exportar CSV</button>
-        <button class="ctrl-btn ctrl-btn-export-zip" id="btnExportZip" onclick="exportDatabaseZip()" title="Exporta os dados do banco (colecao atual ou tudo) em arquivo .zip sem precisar abrir o Oracle">Exportar Banco ZIP</button>
-        <button class="ctrl-btn ctrl-btn-reset" onclick="resetDatabase()" title="Remove TODOS os dados do banco Oracle XE (irreversivel)">Zerar Banco</button>
+        <button class="ctrl-btn ctrl-btn-export-zip" id="btnExportZip" onclick="exportDatabaseZip()" title="Exporta os dados do banco (colecao atual ou tudo) em arquivo .zip sem precisar abrir o Oracle">Exportar ZIP</button>
+        <button class="ctrl-btn ctrl-btn-reset" onclick="resetDatabase()"
+          title="Zera dados de TREINO (sensor_training_data + sensor_data). Dados de monitoramento sao PRESERVADOS.">Zerar Treino</button>
       </div>
       <div class="hz-row" aria-label="Controle de taxa">
         <span class="hz-label">Taxa:</span>
@@ -1610,6 +1701,7 @@
             </div>
           </div>
           <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="trainBreakdown">Aguardando dados...</div>
+          <div style="margin-top:6px;font-size:0.7rem;color:var(--muted);opacity:0.7;" id="statsTableLabel"></div>
         </div>
       </details>
     </div>
@@ -3173,6 +3265,11 @@
         cfgEl.textContent = parts.join(' | ');
       }
 
+      // Sincronizar data_purpose a partir do estado do servidor
+      if (state?.data_purpose) {
+        updateDataPurposeUI(state.data_purpose);
+      }
+
       const warnBox = document.getElementById('collectionWarningBox');
       const warnText = document.getElementById('collectionWarningText');
       const fixBtn = document.getElementById('btnFixCollection');
@@ -3364,12 +3461,15 @@
         updateMonitorTag();
         resetValidation();
         await refreshExportStatus({ force: true, silent: true });
+        // data_purpose permanece MONITORING ate o usuario iniciar a automacao
       } catch (e) { alert('Erro ao definir nova coleta'); }
     }
 
     async function exportToCSV(options = {}) {
       const silent = !!options?.silent;
-      const collectionId = document.getElementById('currentCollectionId')?.innerText?.trim();
+      // Fix 1: prioriza collection_id passado via options (ex.: chamada da automacao)
+      const collectionId = options.collection_id
+        || document.getElementById('currentCollectionId')?.innerText?.trim();
       if (!collectionId || collectionId === '--' || collectionId === 'v5_stream') {
         const msg = 'Nenhuma coleta identificada para exportar.\nInicie uma nova coleta primeiro.';
         if (!silent) {
@@ -3381,17 +3481,26 @@
       const btn = document.getElementById('btnExportCsv');
       btn.disabled = true;
       btn.innerText = 'Exportando...';
+      // Fix 4: log URL real para diagnostico
+      const exportUrl = buildApiUrl('../api/export_csv');
+      console.log('[exportCSV] URL:', exportUrl, '| collection_id:', collectionId);
       try {
-        const res = await fetch(buildApiUrl('../api/export_csv'), {
+        const res = await fetch(exportUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
           body: JSON.stringify(withDevicePayload({ collection_id: collectionId })),
         });
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch (parseErr) {
+          // Fix 3: parse error geralmente significa servidor offline / resposta HTML
+          throw new Error(`Servidor retornou resposta invalida (status ${res.status}). Verifique se o servidor esta acessivel.`);
+        }
         const detailMsg = (typeof data?.detail === 'string')
           ? data.detail
           : (typeof data?.detail?.message === 'string' ? data.detail.message : null);
-        if (!res.ok) throw new Error(detailMsg || 'Erro desconhecido');
+        if (!res.ok) throw new Error(detailMsg || `Erro HTTP ${res.status}`);
         rememberLastExportedCollection(collectionId);
         await refreshExportStatus({ force: true, silent: true });
         btn.innerText = 'CSV Exportado ✓';
@@ -3406,6 +3515,7 @@
         }
         return data;
       } catch (e) {
+        console.error('[exportCSV] Falha:', e.message);
         btn.innerText = 'Exportar CSV';
         if (!silent) {
           alert(`Erro ao exportar CSV:\n${e.message}`);
@@ -3976,6 +4086,8 @@
           breakdownHtml = 'Sem dados por classe/rotulo';
         }
         document.getElementById('trainBreakdown').innerHTML = breakdownHtml;
+        const statsTableEl = document.getElementById('statsTableLabel');
+        if (statsTableEl) statsTableEl.innerText = json.stats_table ? `tabela: ${json.stats_table}` : '';
       } catch (e) { /* silent */ }
     }
 
@@ -4109,6 +4221,8 @@
       document.getElementById('autoStatus').innerText = 'Inicializando automacao...';
       monitorOrigin = 'auto_running';
       updateMonitorTag();
+      // Ativa modo TRAINING exatamente ao iniciar a automacao supervisionada
+      await setDataPurpose('TRAINING');
       await applyAutoPhase(autoPhases[0]);
       beep();
       autoInterval = setInterval(autoTick, 1000);
@@ -4142,14 +4256,21 @@
           document.getElementById('autoProgressBar').style.width = '100%';
           activeTrainingClassKey = null;
           updateTrainingClassPreview();
+          // Fix 2: capturar collection_id ANTES do setMode(PAUSE) para evitar
+          // que o servidor retorne 'v5_stream' apos a transicao para PAUSE
+          const autoCollectionId = document.getElementById('currentCollectionId')?.innerText?.trim();
+          console.log('[autoTick] Coleta concluida, collection_id:', autoCollectionId);
           await setMode('PAUSE', { labelSource: 'AUTO', transitionMarker: 0 });
           document.getElementById('autoStatus').innerText = 'Automacao concluida! Exportando CSV...';
           try {
-            await exportToCSV({ silent: true });
+            await exportToCSV({ silent: true, collection_id: autoCollectionId });
           } catch (e) {
+            console.error('[autoTick] Falha ao exportar CSV:', e.message);
             document.getElementById('autoStatus').innerText = `Automacao concluida, mas falhou ao exportar CSV: ${e.message || e}`;
             return;
           }
+          // Volta automaticamente ao modo Monitoramento apos coleta de treino
+          await setDataPurpose('MONITORING');
           monitorOrigin = 'auto_finished';
           updateMonitorTag();
           document.getElementById('autoStatus').innerText = 'Automacao concluida! Use o notebook 01_EDA para analise.';
@@ -4169,6 +4290,73 @@
       const secs = Math.floor(phaseRemaining % 60).toString().padStart(2, '0');
       document.getElementById('autoStatus').innerText = `${phase.label} - Restam ${mins}:${secs} | Fase ${phaseIdx + 1}/${autoPhases.length}`;
       document.getElementById('autoProgressBar').style.width = Math.min(100, (elapsed / totalDuration) * 100) + '%';
+    }
+
+    // --- Data Purpose (MONITORING padrão / TRAINING durante coleta) ---
+    let currentDataPurpose = 'MONITORING';
+
+    function updateDataPurposeUI(purpose) {
+      currentDataPurpose = purpose || 'MONITORING';
+      const isTraining = currentDataPurpose === 'TRAINING';
+
+      const banner      = document.getElementById('dataPurposeBanner');
+      const labelEl     = document.getElementById('purposeLabel');
+      const tableEl     = document.getElementById('purposeTable');
+      const manualLink  = document.getElementById('purposeManualToggle');
+      const finishBtn   = document.getElementById('btnFinalizarTreino');
+
+      if (banner) {
+        banner.classList.toggle('purpose-training',   isTraining);
+        banner.classList.toggle('purpose-monitoring', !isTraining);
+      }
+      if (labelEl)    labelEl.textContent  = isTraining ? 'COLETANDO TREINO' : 'MONITORAMENTO';
+      if (tableEl)    tableEl.textContent  = isTraining ? 'sensor_training_data' : 'sensor_monitoring_data';
+      if (manualLink) {
+        manualLink.textContent = isTraining ? 'voltar para monitoramento' : 'mudar para treino';
+        manualLink.onclick     = isTraining
+          ? () => setDataPurpose('MONITORING')
+          : () => setDataPurpose('TRAINING');
+        manualLink.title       = isTraining
+          ? 'Voltar ao modo Monitoramento sem exportar (descarta coleta ativa)'
+          : 'Ativar modo coleta de treino manualmente (sem criar nova sessao)';
+      }
+      if (finishBtn)  finishBtn.style.display = isTraining ? '' : 'none';
+    }
+
+    async function setDataPurpose(purpose) {
+      try {
+        const res = await fetch(buildApiUrl('../api/set_data_purpose'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body: JSON.stringify(withDevicePayload({ data_purpose: purpose })),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert(`Erro ao definir finalidade: ${d.detail || res.status}`);
+          return;
+        }
+        const data = await res.json();
+        updateDataPurposeUI(data.data_purpose || purpose);
+        console.log('[setDataPurpose]', data.data_purpose, '->', data.ingest_table);
+      } catch (e) {
+        alert(`Erro ao definir finalidade dos dados:\n${e.message}`);
+      }
+    }
+
+    async function finalizarTreino() {
+      const btn = document.getElementById('btnFinalizarTreino');
+      if (btn) { btn.disabled = true; btn.textContent = 'Exportando...'; }
+      try {
+        await exportToCSV({ silent: false });
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = '↩ Finalizar Treino'; }
+        return;
+      }
+      // Volta ao modo monitoramento apos exportar
+      await setDataPurpose('MONITORING');
+      await setMode('PAUSE', { labelSource: 'CONTROL', transitionMarker: 0 });
+      if (btn) { btn.disabled = false; btn.textContent = '↩ Finalizar Treino'; }
+      document.getElementById('autoStatus') && (document.getElementById('autoStatus').innerText = 'Treino finalizado. Monitorando.');
     }
 
     // --- Init ---

@@ -1,0 +1,17 @@
+{
+  "eda_id": "eda_20260223_183851",
+  "collection_id": "col_20260223_175840_100hz",
+  "eda_timestamp": "20260223_184211",
+  "filtered_csv": "output\\data\\raw_sensor_data_filtered_20260223_184211.csv",
+  "rows": 225613,
+  "sample_hz": 100.0,
+  "active_classes": [
+    "LOW_ROT_ON",
+    "MEDIUM_ROT_ON",
+    "HIGH_ROT_ON",
+    "LOW_ROT_OFF",
+    "MEDIUM_ROT_OFF",
+    "HIGH_ROT_OFF",
+    "FAN_OFF"
+  ]
+}

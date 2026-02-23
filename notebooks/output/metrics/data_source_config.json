@@ -1,5 +1,7 @@
-﻿{
-    "data_source":  "AUTO",
-    "csv_file":  null,
-    "updated_at":  "20260223_175529"
+{
+  "data_source": "AUTO",
+  "resolved_source": "SQL",
+  "resolution_reason": "sql_live",
+  "csv_file": null,
+  "updated_at": "20260223_183836"
 }

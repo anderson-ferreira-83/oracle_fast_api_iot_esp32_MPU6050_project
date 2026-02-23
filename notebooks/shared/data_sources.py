@@ -313,15 +313,18 @@ def load_raw_from_oracle(
     device_id=None,
     collection_id=None,
     limit=0,
+    table="sensor_training_data",
 ):
-    """Carrega dados raw de sensor_data no Oracle em formato compativel com notebooks.
+    """Carrega dados raw do Oracle em formato compativel com notebooks.
 
+    Usa sensor_training_data por padrao (coletas supervisionadas).
+    Para dados legados use table='sensor_data'.
     Requer pandas + sqlalchemy + python-oracledb.
     """
     import pandas as pd
     from sqlalchemy import create_engine, text
 
-    sql = """
+    sql = f"""
         SELECT
             id,
             ts_epoch AS timestamp,
@@ -344,7 +347,7 @@ def load_raw_from_oracle(
             transition_marker,
             device_id,
             created_at
-        FROM sensor_data
+        FROM {table}
         WHERE 1=1
     """
     params = {}
