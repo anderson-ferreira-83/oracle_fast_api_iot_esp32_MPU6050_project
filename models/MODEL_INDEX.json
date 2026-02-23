@@ -1,11 +1,12 @@
 ﻿{
-  "version": "1.1",
-  "generated_at": "2026-02-22T00:00:00Z",
-  "default_model": "../models/rf_model_20260222.json",
+  "version": "1.2",
+  "generated_at": "2026-02-23T00:00:00Z",
+  "default_model": "../models/gnb_model_20260223.json",
   "models_by_rate": {
     "4": "../models/gnb_model_20260203.json",
     "10": "../models/gnb_model_20260203.json",
     "15": "../models/gnb_model_20260207.json",
-    "20": "../models/rf_model_20260222.json"
+    "20": "../models/rf_model_20260222.json",
+    "100": "../models/gnb_model_20260223.json"
   }
 }

@@ -57,14 +57,13 @@ window.ClassLabels = ClassLabels;
 
 const ClassifierConfig = {
     // Tamanho da Janela Deslizante: Quantos pontos passados analisamos de uma vez
-    // 100 pontos a ~15Hz = ~6.7s de dados (estabiliza skew/kurtosis)
+    // 1000 pontos a 100Hz = 10s de dados (estabiliza skew/kurtosis)
     // Deve ser igual ao window_size usado no treinamento do modelo
-    WINDOW_SIZE: 100,
+    WINDOW_SIZE: 1000,
 
     // Minimo de pontos no buffer para iniciar classificacao
-    // 40 pontos a ~15Hz = ~2.7s para primeira predicao
-    // Reduzido de 50: modelo v6 com 25 features e robusto o suficiente
-    MIN_POINTS: 40,
+    // 200 pontos a 100Hz = 2s para primeira predicao
+    MIN_POINTS: 200,
 
     // Confidence thresholds
     CONFIDENCE_HIGH: 0.70,
@@ -92,24 +91,24 @@ const ClassifierConfig = {
     HYSTERESIS_COUNT: 3,
 
     // Taxa de amostragem do sensor (Hz) — usada para FFT features
-    SAMPLING_HZ: 20.0,
+    SAMPLING_HZ: 100.0,
 
     // Deteccao de mudanca brusca: monitora gyro_z_dps P95
     // Compara ultimos N pontos com primeira metade do buffer
     // Se ratio P95_recente/P95_antigo sair do intervalo, faz flush parcial
-    CHANGE_DETECT_WINDOW: 20,       // ultimos 20 pontos (~1.3s) para detectar mudanca
+    CHANGE_DETECT_WINDOW: 50,       // ultimos 50 pontos (0.5s a 100Hz) para detectar mudanca
     CHANGE_DETECT_RATIO: 0.25,      // Reduzido de 0.30: detecta transicoes HIGH->LOW mais cedo
-    FAST_FLUSH_KEEP: 30,            // Aumentado de 25 para 30: mantem mais contexto pos-flush
+    FAST_FLUSH_KEEP: 100,           // 1s de contexto pos-flush a 100Hz
     CHANGE_DETECT_COOLDOWN: 10000,  // Reduzido de 15s para 10s: permite reagir a transicoes consecutivas
 
     // Defaults for reset
     _DEFAULTS: {
-        WINDOW_SIZE: 100,
-        MIN_POINTS: 40,
+        WINDOW_SIZE: 1000,
+        MIN_POINTS: 200,
         SMOOTHING_ALPHA: 0.65,
         HYSTERESIS_COUNT: 3,
         CHANGE_DETECT_RATIO: 0.25,
-        FAST_FLUSH_KEEP: 30,
+        FAST_FLUSH_KEEP: 100,
         CHANGE_DETECT_COOLDOWN: 10000,
         ADJACENT_TRANSITION_CONFIDENCE_GATE: 0.95,
         ADJACENT_TRANSITION_CONFIDENCE_MARGIN: 0.12,

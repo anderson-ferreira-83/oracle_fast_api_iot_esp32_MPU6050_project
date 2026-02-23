@@ -1,7 +1,7 @@
 {
   "type": "gaussian_nb",
-  "version": "7class_100hz_20260223_123724",
-  "generated_at": "2026-02-23 12:37:24",
+  "version": "7class_100hz_20260223_144015",
+  "generated_at": "2026-02-23 14:40:15",
   "sample_rate_hz": 100,
   "window_size": 1000,
   "step_size": 500,
@@ -137,20 +137,24 @@
   },
   "spectral_bands": {
     "rot": [
-      0.1,
-      1.5
+      0.5,
+      1.8
     ],
-    "vel1": [
-      3.0,
-      6.5
+    "low_spd": [
+      1.0,
+      2.0
     ],
-    "vel2": [
-      6.5,
-      9.5
+    "med_spd": [
+      2.0,
+      3.5
     ],
-    "vel3": [
-      9.5,
-      14.0
+    "high_spd": [
+      3.5,
+      7.0
+    ],
+    "hi_freq": [
+      7.0,
+      25.0
     ],
     "noise": [
       25.0,
