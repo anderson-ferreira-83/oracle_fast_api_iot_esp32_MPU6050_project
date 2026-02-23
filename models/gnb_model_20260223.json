@@ -1,16 +1,25 @@
 {
   "type": "gaussian_nb",
-  "version": "7class_100hz_20260223_145422",
-  "generated_at": "2026-02-23 14:54:22",
-  "sample_rate_hz": 100,
-  "window_size": 1000,
-  "step_size": 500,
-  "n_fft": 4096,
-  "collection_id": "col_20260223_115149_100hz",
+  "version": "py_20260223",
+  "generated_at": "2026-02-23 16:00:25",
+  "generated_by": "03_Model_Training_Evaluation.ipynb",
   "features": [
-    "accel_x_g_std",
-    "gyro_z_dps_peak",
-    "gyro_y_dps_skew"
+    "accel_y_g_std",
+    "accel_x_g_fft_mid",
+    "vibration_dps_rms",
+    "gyro_y_dps_fft_low",
+    "gyro_y_dps_p10",
+    "vibration_dps_fft_low",
+    "gyro_z_dps_fft_low",
+    "gyro_y_dps_fft_high",
+    "accel_z_g_p95",
+    "gyro_x_dps_fft_low",
+    "accel_x_g_rms",
+    "gyro_y_dps_fft_mid",
+    "accel_y_g_p95",
+    "gyro_z_dps_fft_high",
+    "accel_z_g_fft_mid",
+    "vibration_dps_p25"
   ],
   "labels": [
     "FAN_OFF",
@@ -21,144 +30,935 @@
     "MEDIUM_ROT_OFF",
     "MEDIUM_ROT_ON"
   ],
+  "n_classes": 7,
   "priors": {
-    "FAN_OFF": 0.136,
-    "HIGH_ROT_OFF": 0.14,
-    "HIGH_ROT_ON": 0.164,
-    "LOW_ROT_OFF": 0.132,
-    "LOW_ROT_ON": 0.152,
-    "MEDIUM_ROT_OFF": 0.14,
-    "MEDIUM_ROT_ON": 0.136
+    "FAN_OFF": 0.13481152993348117,
+    "HIGH_ROT_OFF": 0.14412416851441243,
+    "HIGH_ROT_ON": 0.14412416851441243,
+    "LOW_ROT_OFF": 0.14412416851441243,
+    "LOW_ROT_ON": 0.14412416851441243,
+    "MEDIUM_ROT_OFF": 0.14412416851441243,
+    "MEDIUM_ROT_ON": 0.14456762749445676
   },
   "stats": {
     "FAN_OFF": {
-      "accel_x_g_std": {
-        "mean": 0.00448180481276964,
-        "var": 4.18366713687425e-07
+      "accel_y_g_std": {
+        "mean": 0.00389544500377623,
+        "var": 8.454957979020926e-06,
+        "count": 304
       },
-      "gyro_z_dps_peak": {
-        "mean": 1.2805882352941178,
-        "var": 0.0021176122911004463
+      "accel_x_g_fft_mid": {
+        "mean": 0.043596860056196805,
+        "var": 0.0003213020379586255,
+        "count": 304
       },
-      "gyro_y_dps_skew": {
-        "mean": 0.01598951934928025,
-        "var": 0.01956400873345671
+      "vibration_dps_rms": {
+        "mean": 1.3835667615332081,
+        "var": 0.001201679403621902,
+        "count": 304
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 1.233367297430525,
+        "var": 0.29113068664442154,
+        "count": 304
+      },
+      "gyro_y_dps_p10": {
+        "mean": 0.38375328947368476,
+        "var": 0.005925687528080564,
+        "count": 304
+      },
+      "vibration_dps_fft_low": {
+        "mean": 0.9707818779455332,
+        "var": 0.21853766850971268,
+        "count": 304
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 1.1340319368111176,
+        "var": 0.16746737287298313,
+        "count": 304
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 304
+      },
+      "accel_z_g_p95": {
+        "mean": -1.0629497368421046,
+        "var": 7.676571562214406e-06,
+        "count": 304
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 1.2301412273716774,
+        "var": 0.3090910590001936,
+        "count": 304
+      },
+      "accel_x_g_rms": {
+        "mean": 0.3039075575379268,
+        "var": 7.1793033250721275e-06,
+        "count": 304
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 1.4385644134740916,
+        "var": 0.8121653762597937,
+        "count": 304
+      },
+      "accel_y_g_p95": {
+        "mean": 0.15122616776315784,
+        "var": 1.2518409001348317e-05,
+        "count": 304
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 304
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.048846803124765685,
+        "var": 4.515952719362978e-05,
+        "count": 304
+      },
+      "vibration_dps_p25": {
+        "mean": 1.3100390624999998,
+        "var": 0.00038631732264400744,
+        "count": 304
       }
     },
     "HIGH_ROT_OFF": {
-      "accel_x_g_std": {
-        "mean": 0.26885602090651467,
-        "var": 3.4093709655339355e-05
+      "accel_y_g_std": {
+        "mean": 0.3523512728152209,
+        "var": 0.009650938821724946,
+        "count": 325
       },
-      "gyro_z_dps_peak": {
-        "mean": 22.616857142857143,
-        "var": 1.1431590051305898
+      "accel_x_g_fft_mid": {
+        "mean": 0.9596492106796582,
+        "var": 0.13453921067465255,
+        "count": 325
       },
-      "gyro_y_dps_skew": {
-        "mean": 0.8642475045352503,
-        "var": 0.003669731118413212
+      "vibration_dps_rms": {
+        "mean": 14.166106053421965,
+        "var": 12.787556876264683,
+        "count": 325
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 52.00020688563359,
+        "var": 291.6071280838582,
+        "count": 325
+      },
+      "gyro_y_dps_p10": {
+        "mean": -4.498012307692312,
+        "var": 3.061231388536207,
+        "count": 325
+      },
+      "vibration_dps_fft_low": {
+        "mean": 71.64128191910353,
+        "var": 391.55123323823955,
+        "count": 325
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 85.4636234312474,
+        "var": 504.35867018349677,
+        "count": 325
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_p95": {
+        "mean": -1.0000220000000009,
+        "var": 0.0007493990586097053,
+        "count": 325
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 152.1581713725876,
+        "var": 1780.8572138264597,
+        "count": 325
+      },
+      "accel_x_g_rms": {
+        "mean": 0.4114656829519386,
+        "var": 0.00203792715873513,
+        "count": 325
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 27.865992135828773,
+        "var": 58.08588898344275,
+        "count": 325
+      },
+      "accel_y_g_p95": {
+        "mean": 0.6442040769230766,
+        "var": 0.02438514450668072,
+        "count": 325
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.4052554015839062,
+        "var": 0.010849053840547832,
+        "count": 325
+      },
+      "vibration_dps_p25": {
+        "mean": 8.006671538461537,
+        "var": 4.609531768089168,
+        "count": 325
       }
     },
     "HIGH_ROT_ON": {
-      "accel_x_g_std": {
-        "mean": 0.28904883302097745,
-        "var": 9.919750498459696e-05
+      "accel_y_g_std": {
+        "mean": 0.2624010735996271,
+        "var": 0.0049498927379573385,
+        "count": 325
       },
-      "gyro_z_dps_peak": {
-        "mean": 49.83609756097564,
-        "var": 3.7041704480763618
+      "accel_x_g_fft_mid": {
+        "mean": 0.9155755529030162,
+        "var": 0.04555766610350649,
+        "count": 325
       },
-      "gyro_y_dps_skew": {
-        "mean": 0.7172023949856329,
-        "var": 0.004627537370449683
+      "vibration_dps_rms": {
+        "mean": 21.138623041945095,
+        "var": 5.984764132188233,
+        "count": 325
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 37.27916473777174,
+        "var": 52.74015237381528,
+        "count": 325
+      },
+      "gyro_y_dps_p10": {
+        "mean": -3.5160399999999994,
+        "var": 1.0105399563184572,
+        "count": 325
+      },
+      "vibration_dps_fft_low": {
+        "mean": 112.74903502491586,
+        "var": 348.3129457778453,
+        "count": 325
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 206.6235869859219,
+        "var": 2281.4981935363203,
+        "count": 325
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_p95": {
+        "mean": -0.979221692307692,
+        "var": 0.0007590315806688774,
+        "count": 325
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 112.95551988049854,
+        "var": 613.8439664708288,
+        "count": 325
+      },
+      "accel_x_g_rms": {
+        "mean": 0.38344670547616494,
+        "var": 0.0005801999336233133,
+        "count": 325
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 28.705133810336143,
+        "var": 28.804372378699078,
+        "count": 325
+      },
+      "accel_y_g_p95": {
+        "mean": 0.4684960615384614,
+        "var": 0.035479706410021315,
+        "count": 325
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.5007085797726871,
+        "var": 0.0036045592865392865,
+        "count": 325
+      },
+      "vibration_dps_p25": {
+        "mean": 13.280830153846152,
+        "var": 2.4767271956245867,
+        "count": 325
       }
     },
     "LOW_ROT_OFF": {
-      "accel_x_g_std": {
-        "mean": 0.06893039949784535,
-        "var": 2.6775059052959185e-06
+      "accel_y_g_std": {
+        "mean": 0.08349905121386286,
+        "var": 0.0003601700353821011,
+        "count": 325
       },
-      "gyro_z_dps_peak": {
-        "mean": 6.4787878787878785,
-        "var": 0.04259278140914471
+      "accel_x_g_fft_mid": {
+        "mean": 0.48755076526165453,
+        "var": 0.017277779554723767,
+        "count": 325
       },
-      "gyro_y_dps_skew": {
-        "mean": 0.2343674937693975,
-        "var": 0.0038023928157496856
+      "vibration_dps_rms": {
+        "mean": 7.4359319252838265,
+        "var": 5.3866795653583335,
+        "count": 325
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 24.028762933015642,
+        "var": 87.27392608951114,
+        "count": 325
+      },
+      "gyro_y_dps_p10": {
+        "mean": -2.0948276923076916,
+        "var": 1.3603499559208232,
+        "count": 325
+      },
+      "vibration_dps_fft_low": {
+        "mean": 28.913725948936406,
+        "var": 129.03009757342045,
+        "count": 325
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 79.92013922338633,
+        "var": 583.1993126046457,
+        "count": 325
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_p95": {
+        "mean": -1.0244295538461545,
+        "var": 0.00038461470602603676,
+        "count": 325
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 40.080461353944635,
+        "var": 269.9767745351632,
+        "count": 325
+      },
+      "accel_x_g_rms": {
+        "mean": 0.32344509001481436,
+        "var": 0.00013744866499506442,
+        "count": 325
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 18.606576087992664,
+        "var": 76.79463998189412,
+        "count": 325
+      },
+      "accel_y_g_p95": {
+        "mean": 0.26878589230769256,
+        "var": 0.002183560722890416,
+        "count": 325
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.24904522760829817,
+        "var": 0.007883371097247691,
+        "count": 325
+      },
+      "vibration_dps_p25": {
+        "mean": 5.467364076923073,
+        "var": 2.9363879205337566,
+        "count": 325
       }
     },
     "LOW_ROT_ON": {
-      "accel_x_g_std": {
-        "mean": 0.06771696006027952,
-        "var": 1.546619932792845e-05
+      "accel_y_g_std": {
+        "mean": 0.11489067407448726,
+        "var": 0.000550244308368878,
+        "count": 325
       },
-      "gyro_z_dps_peak": {
-        "mean": 34.29473684210526,
-        "var": 2.3717515577904345
+      "accel_x_g_fft_mid": {
+        "mean": 0.8734813519993995,
+        "var": 0.02256070774909216,
+        "count": 325
       },
-      "gyro_y_dps_skew": {
-        "mean": -0.6444882462749019,
-        "var": 0.016251204671540176
+      "vibration_dps_rms": {
+        "mean": 19.398187638254353,
+        "var": 3.2710807761655376,
+        "count": 325
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 32.923771057553765,
+        "var": 90.98642440748351,
+        "count": 325
+      },
+      "gyro_y_dps_p10": {
+        "mean": -4.064178461538462,
+        "var": 0.9592073383776274,
+        "count": 325
+      },
+      "vibration_dps_fft_low": {
+        "mean": 144.07156706226948,
+        "var": 296.74838225955705,
+        "count": 325
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 204.8740173012009,
+        "var": 644.0242848221139,
+        "count": 325
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_p95": {
+        "mean": -0.9997804615384613,
+        "var": 0.00036036179378130334,
+        "count": 325
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 44.940975356932206,
+        "var": 103.4098635382901,
+        "count": 325
+      },
+      "accel_x_g_rms": {
+        "mean": 0.3403485878628106,
+        "var": 0.0003640940520928427,
+        "count": 325
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 44.394142982444876,
+        "var": 63.521608699174294,
+        "count": 325
+      },
+      "accel_y_g_p95": {
+        "mean": 0.1779843538461537,
+        "var": 0.009582236752346032,
+        "count": 325
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.4389643910118665,
+        "var": 0.006939363862507581,
+        "count": 325
+      },
+      "vibration_dps_p25": {
+        "mean": 6.96796453846154,
+        "var": 1.8915118530436277,
+        "count": 325
       }
     },
     "MEDIUM_ROT_OFF": {
-      "accel_x_g_std": {
-        "mean": 0.0683587450652313,
-        "var": 3.739554104201692e-05
+      "accel_y_g_std": {
+        "mean": 0.18672377452957267,
+        "var": 0.0022692812476328922,
+        "count": 325
       },
-      "gyro_z_dps_peak": {
-        "mean": 17.68228571428572,
-        "var": 1.6232522296203846
+      "accel_x_g_fft_mid": {
+        "mean": 0.8647054242351686,
+        "var": 0.06378059843887299,
+        "count": 325
       },
-      "gyro_y_dps_skew": {
-        "mean": -0.3149207721894508,
-        "var": 0.0053981960216485155
+      "vibration_dps_rms": {
+        "mean": 15.584672208173131,
+        "var": 0.7405066519677471,
+        "count": 325
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 62.46200532904764,
+        "var": 53.99090327491516,
+        "count": 325
+      },
+      "gyro_y_dps_p10": {
+        "mean": -5.607981538461536,
+        "var": 1.2912583360391663,
+        "count": 325
+      },
+      "vibration_dps_fft_low": {
+        "mean": 77.11718975420874,
+        "var": 54.68612497943249,
+        "count": 325
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 150.16683995602074,
+        "var": 415.340322256105,
+        "count": 325
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_p95": {
+        "mean": -0.9542648923076917,
+        "var": 0.0006447744343673382,
+        "count": 325
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 115.18784373637546,
+        "var": 157.54784729241564,
+        "count": 325
+      },
+      "accel_x_g_rms": {
+        "mean": 0.36541844349988006,
+        "var": 0.000488719599349903,
+        "count": 325
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 32.286611738233184,
+        "var": 37.721608020939726,
+        "count": 325
+      },
+      "accel_y_g_p95": {
+        "mean": 0.44366675384615395,
+        "var": 0.007438026221533729,
+        "count": 325
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 325
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.4831317372920908,
+        "var": 0.005801457794733589,
+        "count": 325
+      },
+      "vibration_dps_p25": {
+        "mean": 9.598779153846143,
+        "var": 0.7771105053858164,
+        "count": 325
       }
     },
     "MEDIUM_ROT_ON": {
-      "accel_x_g_std": {
-        "mean": 0.15368703238432724,
-        "var": 0.00023572422380721054
+      "accel_y_g_std": {
+        "mean": 0.16930158906863413,
+        "var": 0.001552710597291438,
+        "count": 326
       },
-      "gyro_z_dps_peak": {
-        "mean": 47.241176470588236,
-        "var": 3.18584598599352
+      "accel_x_g_fft_mid": {
+        "mean": 1.0234477604734296,
+        "var": 0.1180002891174846,
+        "count": 326
       },
-      "gyro_y_dps_skew": {
-        "mean": -0.7071680136708128,
-        "var": 0.01253965874637483
+      "vibration_dps_rms": {
+        "mean": 21.496130014808536,
+        "var": 2.6214770751021947,
+        "count": 326
+      },
+      "gyro_y_dps_fft_low": {
+        "mean": 61.29074303749234,
+        "var": 46.84288082064684,
+        "count": 326
+      },
+      "gyro_y_dps_p10": {
+        "mean": -5.462828220858896,
+        "var": 1.1424471417751778,
+        "count": 326
+      },
+      "vibration_dps_fft_low": {
+        "mean": 145.63731332224066,
+        "var": 264.97283257470747,
+        "count": 326
+      },
+      "gyro_z_dps_fft_low": {
+        "mean": 219.01279388927674,
+        "var": 1216.3819687181604,
+        "count": 326
+      },
+      "gyro_y_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 326
+      },
+      "accel_z_g_p95": {
+        "mean": -0.9551045552147244,
+        "var": 0.0005428056320558075,
+        "count": 326
+      },
+      "gyro_x_dps_fft_low": {
+        "mean": 86.09204521149059,
+        "var": 210.0990852520965,
+        "count": 326
+      },
+      "accel_x_g_rms": {
+        "mean": 0.39152844568561135,
+        "var": 0.0008627025669838648,
+        "count": 326
+      },
+      "gyro_y_dps_fft_mid": {
+        "mean": 32.77394195453178,
+        "var": 36.982972061003345,
+        "count": 326
+      },
+      "accel_y_g_p95": {
+        "mean": 0.2937815644171779,
+        "var": 0.021181464451048574,
+        "count": 326
+      },
+      "gyro_z_dps_fft_high": {
+        "mean": 0.0,
+        "var": 6.514841532782299e-06,
+        "count": 326
+      },
+      "accel_z_g_fft_mid": {
+        "mean": 0.4801333630884351,
+        "var": 0.008030299080758878,
+        "count": 326
+      },
+      "vibration_dps_p25": {
+        "mean": 9.743226150306748,
+        "var": 3.7453221010422824,
+        "count": 326
       }
     }
   },
   "metrics": {
-    "train_accuracy": 1.0,
-    "cv_accuracy_mean": 1.0,
-    "cv_accuracy_std": 0.0
+    "train_accuracy": 0.9343680709534368,
+    "cv_accuracy_mean": 0.9339246119733924,
+    "cv": {
+      "stratified": {
+        "accuracy_mean": 0.9339246119733924,
+        "accuracy_std": 0.009238433106873457,
+        "fold_scores": [
+          0.9334811529933481,
+          0.9490022172949002,
+          0.9312638580931264,
+          0.9356984478935698,
+          0.9201773835920177
+        ],
+        "adjacent_confusion_rate": 0.05631929046563193,
+        "confusion_matrix": {
+          "FAN_OFF": {
+            "FAN_OFF": 299,
+            "HIGH_ROT_OFF": 0,
+            "HIGH_ROT_ON": 0,
+            "LOW_ROT_OFF": 5,
+            "LOW_ROT_ON": 0,
+            "MEDIUM_ROT_OFF": 0,
+            "MEDIUM_ROT_ON": 0
+          },
+          "HIGH_ROT_OFF": {
+            "FAN_OFF": 17,
+            "HIGH_ROT_OFF": 302,
+            "HIGH_ROT_ON": 0,
+            "LOW_ROT_OFF": 6,
+            "LOW_ROT_ON": 0,
+            "MEDIUM_ROT_OFF": 0,
+            "MEDIUM_ROT_ON": 0
+          },
+          "HIGH_ROT_ON": {
+            "FAN_OFF": 0,
+            "HIGH_ROT_OFF": 1,
+            "HIGH_ROT_ON": 292,
+            "LOW_ROT_OFF": 13,
+            "LOW_ROT_ON": 6,
+            "MEDIUM_ROT_OFF": 2,
+            "MEDIUM_ROT_ON": 11
+          },
+          "LOW_ROT_OFF": {
+            "FAN_OFF": 0,
+            "HIGH_ROT_OFF": 1,
+            "HIGH_ROT_ON": 0,
+            "LOW_ROT_OFF": 303,
+            "LOW_ROT_ON": 0,
+            "MEDIUM_ROT_OFF": 21,
+            "MEDIUM_ROT_ON": 0
+          },
+          "LOW_ROT_ON": {
+            "FAN_OFF": 0,
+            "HIGH_ROT_OFF": 0,
+            "HIGH_ROT_ON": 0,
+            "LOW_ROT_OFF": 0,
+            "LOW_ROT_ON": 304,
+            "MEDIUM_ROT_OFF": 0,
+            "MEDIUM_ROT_ON": 21
+          },
+          "MEDIUM_ROT_OFF": {
+            "FAN_OFF": 0,
+            "HIGH_ROT_OFF": 23,
+            "HIGH_ROT_ON": 0,
+            "LOW_ROT_OFF": 0,
+            "LOW_ROT_ON": 0,
+            "MEDIUM_ROT_OFF": 302,
+            "MEDIUM_ROT_ON": 0
+          },
+          "MEDIUM_ROT_ON": {
+            "FAN_OFF": 0,
+            "HIGH_ROT_OFF": 0,
+            "HIGH_ROT_ON": 20,
+            "LOW_ROT_OFF": 0,
+            "LOW_ROT_ON": 1,
+            "MEDIUM_ROT_OFF": 1,
+            "MEDIUM_ROT_ON": 304
+          }
+        },
+        "classification_report": {
+          "FAN_OFF": {
+            "precision": 0.9462025316455697,
+            "recall": 0.9835526315789473,
+            "f1-score": 0.964516129032258,
+            "support": 304.0
+          },
+          "HIGH_ROT_OFF": {
+            "precision": 0.9235474006116208,
+            "recall": 0.9292307692307692,
+            "f1-score": 0.9263803680981595,
+            "support": 325.0
+          },
+          "HIGH_ROT_ON": {
+            "precision": 0.9358974358974359,
+            "recall": 0.8984615384615384,
+            "f1-score": 0.9167974882260597,
+            "support": 325.0
+          },
+          "LOW_ROT_OFF": {
+            "precision": 0.926605504587156,
+            "recall": 0.9323076923076923,
+            "f1-score": 0.9294478527607362,
+            "support": 325.0
+          },
+          "LOW_ROT_ON": {
+            "precision": 0.977491961414791,
+            "recall": 0.9353846153846154,
+            "f1-score": 0.9559748427672956,
+            "support": 325.0
+          },
+          "MEDIUM_ROT_OFF": {
+            "precision": 0.9263803680981595,
+            "recall": 0.9292307692307692,
+            "f1-score": 0.9278033794162827,
+            "support": 325.0
+          },
+          "MEDIUM_ROT_ON": {
+            "precision": 0.9047619047619048,
+            "recall": 0.9325153374233128,
+            "f1-score": 0.918429003021148,
+            "support": 326.0
+          },
+          "accuracy": 0.9339246119733925,
+          "macro avg": {
+            "precision": 0.9344124438595198,
+            "recall": 0.9343833362310922,
+            "f1-score": 0.9341927233317057,
+            "support": 2255.0
+          },
+          "weighted avg": {
+            "precision": 0.9342894982353049,
+            "recall": 0.9339246119733925,
+            "f1-score": 0.9339033418505429,
+            "support": 2255.0
+          }
+        }
+      },
+      "groupkfold": null
+    },
+    "holdout_test": {
+      "accuracy": 0.9423503325942351,
+      "confusion_matrix": {
+        "FAN_OFF": {
+          "FAN_OFF": 60,
+          "HIGH_ROT_OFF": 0,
+          "HIGH_ROT_ON": 0,
+          "LOW_ROT_OFF": 1,
+          "LOW_ROT_ON": 0,
+          "MEDIUM_ROT_OFF": 0,
+          "MEDIUM_ROT_ON": 0
+        },
+        "HIGH_ROT_OFF": {
+          "FAN_OFF": 1,
+          "HIGH_ROT_OFF": 62,
+          "HIGH_ROT_ON": 0,
+          "LOW_ROT_OFF": 2,
+          "LOW_ROT_ON": 0,
+          "MEDIUM_ROT_OFF": 0,
+          "MEDIUM_ROT_ON": 0
+        },
+        "HIGH_ROT_ON": {
+          "FAN_OFF": 0,
+          "HIGH_ROT_OFF": 0,
+          "HIGH_ROT_ON": 60,
+          "LOW_ROT_OFF": 2,
+          "LOW_ROT_ON": 2,
+          "MEDIUM_ROT_OFF": 0,
+          "MEDIUM_ROT_ON": 1
+        },
+        "LOW_ROT_OFF": {
+          "FAN_OFF": 0,
+          "HIGH_ROT_OFF": 0,
+          "HIGH_ROT_ON": 0,
+          "LOW_ROT_OFF": 63,
+          "LOW_ROT_ON": 0,
+          "MEDIUM_ROT_OFF": 2,
+          "MEDIUM_ROT_ON": 0
+        },
+        "LOW_ROT_ON": {
+          "FAN_OFF": 0,
+          "HIGH_ROT_OFF": 0,
+          "HIGH_ROT_ON": 0,
+          "LOW_ROT_OFF": 0,
+          "LOW_ROT_ON": 61,
+          "MEDIUM_ROT_OFF": 0,
+          "MEDIUM_ROT_ON": 4
+        },
+        "MEDIUM_ROT_OFF": {
+          "FAN_OFF": 0,
+          "HIGH_ROT_OFF": 7,
+          "HIGH_ROT_ON": 0,
+          "LOW_ROT_OFF": 0,
+          "LOW_ROT_ON": 0,
+          "MEDIUM_ROT_OFF": 58,
+          "MEDIUM_ROT_ON": 0
+        },
+        "MEDIUM_ROT_ON": {
+          "FAN_OFF": 0,
+          "HIGH_ROT_OFF": 0,
+          "HIGH_ROT_ON": 4,
+          "LOW_ROT_OFF": 0,
+          "LOW_ROT_ON": 0,
+          "MEDIUM_ROT_OFF": 0,
+          "MEDIUM_ROT_ON": 61
+        }
+      },
+      "classification_report": {
+        "FAN_OFF": {
+          "precision": 0.9836065573770492,
+          "recall": 0.9836065573770492,
+          "f1-score": 0.9836065573770492,
+          "support": 61.0
+        },
+        "HIGH_ROT_OFF": {
+          "precision": 0.8985507246376812,
+          "recall": 0.9538461538461539,
+          "f1-score": 0.9253731343283582,
+          "support": 65.0
+        },
+        "HIGH_ROT_ON": {
+          "precision": 0.9375,
+          "recall": 0.9230769230769231,
+          "f1-score": 0.9302325581395349,
+          "support": 65.0
+        },
+        "LOW_ROT_OFF": {
+          "precision": 0.9264705882352942,
+          "recall": 0.9692307692307692,
+          "f1-score": 0.9473684210526315,
+          "support": 65.0
+        },
+        "LOW_ROT_ON": {
+          "precision": 0.9682539682539683,
+          "recall": 0.9384615384615385,
+          "f1-score": 0.953125,
+          "support": 65.0
+        },
+        "MEDIUM_ROT_OFF": {
+          "precision": 0.9666666666666667,
+          "recall": 0.8923076923076924,
+          "f1-score": 0.928,
+          "support": 65.0
+        },
+        "MEDIUM_ROT_ON": {
+          "precision": 0.9242424242424242,
+          "recall": 0.9384615384615385,
+          "f1-score": 0.9312977099236641,
+          "support": 65.0
+        },
+        "accuracy": 0.9423503325942351,
+        "macro avg": {
+          "precision": 0.9436129899161548,
+          "recall": 0.9427130246802379,
+          "f1-score": 0.9427147686887482,
+          "support": 451.0
+        },
+        "weighted avg": {
+          "precision": 0.9432582797834639,
+          "recall": 0.9423503325942351,
+          "f1-score": 0.9423520920706702,
+          "support": 451.0
+        }
+      }
+    }
   },
-  "spectral_bands": {
-    "rot": [
-      0.5,
-      1.8
-    ],
-    "low_spd": [
-      1.0,
-      2.0
-    ],
-    "med_spd": [
-      2.0,
-      3.5
-    ],
-    "high_spd": [
-      3.5,
-      7.0
-    ],
-    "hi_freq": [
-      7.0,
-      25.0
-    ],
-    "noise": [
-      25.0,
-      50.0
+  "training_info": {
+    "total_samples": 2255,
+    "window_size": 100,
+    "step_size": 20,
+    "n_classes": 7,
+    "classes": [
+      "FAN_OFF",
+      "HIGH_ROT_OFF",
+      "HIGH_ROT_ON",
+      "LOW_ROT_OFF",
+      "LOW_ROT_ON",
+      "MEDIUM_ROT_OFF",
+      "MEDIUM_ROT_ON"
     ]
+  },
+  "eda_traceability": {
+    "feature_config_version": "5.17",
+    "eda_id": "eda_20260223_155446",
+    "fe_id": "fe_20260223_155446",
+    "eda_generated_at": "20260223_155446",
+    "sample_rate_hz": 100.0,
+    "selection_method": "cohens_d_min_adjacent_classwise_corr_pairwise_score_topk",
+    "features_count": 16,
+    "collection_ids": [
+      "col_20260223_152829_100hz",
+      "col_20260223_153050_100hz"
+    ],
+    "sampling_validation": {
+      "status": "computed_from_loaded_data",
+      "expected_hz": 100.0,
+      "per_class": {
+        "LOW_ROT_ON": {
+          "samples": 14980,
+          "duration_s": 150.0142469406128,
+          "actual_hz": 99.86,
+          "deviation_pct": 0.14
+        },
+        "MEDIUM_ROT_ON": {
+          "samples": 14900,
+          "duration_s": 149.99461197853088,
+          "actual_hz": 99.34,
+          "deviation_pct": 0.66
+        },
+        "HIGH_ROT_ON": {
+          "samples": 16080,
+          "duration_s": 462.4771821498871,
+          "actual_hz": 34.77,
+          "deviation_pct": 65.23
+        },
+        "LOW_ROT_OFF": {
+          "samples": 15320,
+          "duration_s": 150.11000084877014,
+          "actual_hz": 102.06,
+          "deviation_pct": 2.06
+        },
+        "MEDIUM_ROT_OFF": {
+          "samples": 14980,
+          "duration_s": 150.0167920589447,
+          "actual_hz": 99.86,
+          "deviation_pct": 0.14
+        },
+        "HIGH_ROT_OFF": {
+          "samples": 15020,
+          "duration_s": 150.04043698310852,
+          "actual_hz": 100.11,
+          "deviation_pct": 0.11
+        },
+        "FAN_OFF": {
+          "samples": 54100,
+          "duration_s": 540.9067380428314,
+          "actual_hz": 100.02,
+          "deviation_pct": 0.02
+        }
+      },
+      "note": "Taxa estimada via timestamps das 7 classes ativas."
+    },
+    "features_csv_file": "features_extracted_20260222_152508.csv",
+    "features_csv_hash": "7e9af4c272b456cc9e5375644e7fdd4c4119d2b91520a63be009c444174f01bf"
   }
 }

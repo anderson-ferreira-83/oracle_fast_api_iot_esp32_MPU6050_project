@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import csv
+import hashlib
+import io
 import json
 import os
 import re
 import threading
+import zipfile
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +26,13 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 API_DIR = BASE_DIR / "api"
 LOG_DIR = BASE_DIR / "logs"
 MODELS_ADAPTED_DIR = BASE_DIR / "models" / "adapted"
+NOTEBOOKS_OUTPUT_DIR = BASE_DIR / "notebooks" / "output"
+NOTEBOOKS_DATA_DIR = NOTEBOOKS_OUTPUT_DIR / "data"
+NOTEBOOKS_METRICS_DIR = NOTEBOOKS_OUTPUT_DIR / "metrics"
+NOTEBOOKS_EXPORTS_DIR = NOTEBOOKS_METRICS_DIR / "exports"
+EXPORT_REGISTRY_PATH = NOTEBOOKS_METRICS_DIR / "export_registry.jsonl"
+DATA_SOURCE_CONFIG_PATH = NOTEBOOKS_METRICS_DIR / "data_source_config.json"
+EDA_INPUT_MANIFEST_PATH = NOTEBOOKS_METRICS_DIR / "eda_input_manifest.json"
 
 AUTH_TOKEN = os.getenv("API_AUTH_TOKEN", "F0xb@m986960440")
 DEFAULT_API_PATH = "/api/ingest"
@@ -377,6 +388,219 @@ def load_device_status(device_id: Optional[str]) -> Optional[Dict[str, Any]]:
     return d
 
 
+async def read_json_body(request: Request) -> Dict[str, Any]:
+    try:
+        body = await request.json()
+    except Exception:
+        return {}
+    return body if isinstance(body, dict) else {}
+
+
+def ensure_notebook_output_dirs() -> None:
+    NOTEBOOKS_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    NOTEBOOKS_EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def load_export_registry() -> List[Dict[str, Any]]:
+    if not EXPORT_REGISTRY_PATH.exists():
+        return []
+    rows: List[Dict[str, Any]] = []
+    try:
+        with EXPORT_REGISTRY_PATH.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                    if isinstance(item, dict):
+                        rows.append(item)
+                except Exception:
+                    continue
+    except Exception:
+        return []
+    return rows
+
+
+def append_export_registry(entry: Dict[str, Any]) -> None:
+    ensure_notebook_output_dirs()
+    try:
+        with EXPORT_REGISTRY_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def exported_collection_ids() -> set[str]:
+    out: set[str] = set()
+    for item in load_export_registry():
+        cid = str(item.get("collection_id") or "").strip()
+        if cid:
+            out.add(cid)
+    return out
+
+
+def exported_collection_device_pairs() -> set[tuple[str, str]]:
+    out: set[tuple[str, str]] = set()
+    for item in load_export_registry():
+        cid = str(item.get("collection_id") or "").strip()
+        did = sanitize_device_id(item.get("device_id"))
+        if cid and did:
+            out.add((cid, did))
+    return out
+
+
+def parse_int(raw: Any, default: int, minimum: int, maximum: int) -> int:
+    try:
+        val = int(raw)
+    except Exception:
+        return default
+    return max(minimum, min(maximum, val))
+
+
+def pending_collections_for_export(
+    conn: oracledb.Connection,
+    device_id: Optional[str] = None,
+    limit: Optional[int] = 20,
+) -> List[Dict[str, Any]]:
+    tcol = ts_column(conn)
+    where = ""
+    params: Dict[str, Any] = {}
+    if device_id:
+        where = "WHERE device_id = :device_id"
+        params["device_id"] = device_id
+
+    grouped = fetch_all(
+        conn,
+        f"""
+        SELECT collection_id, device_id, COUNT(*) AS cnt, MIN({tcol}) AS ts_min, MAX({tcol}) AS ts_max
+        FROM sensor_data
+        {where}
+        GROUP BY collection_id, device_id
+        ORDER BY MAX({tcol}) DESC
+        """,
+        params,
+    )
+
+    exported_pairs = exported_collection_device_pairs()
+    exported_ids = exported_collection_ids()
+    pending: List[Dict[str, Any]] = []
+    for row in grouped:
+        cid = str(row.get("collection_id") or "").strip()
+        did = sanitize_device_id(row.get("device_id"))
+        if did:
+            if cid and (cid, did) in exported_pairs:
+                continue
+        elif cid and cid in exported_ids:
+            continue
+        pending.append(
+            {
+                "collection_id": cid or "(sem_collection_id)",
+                "device_id": did,
+                "rows": int(row.get("cnt", 0) or 0),
+                "ts_min": float_or_none(row.get("ts_min")),
+                "ts_max": float_or_none(row.get("ts_max")),
+            }
+        )
+    if limit is None:
+        return pending
+    return pending[: max(1, limit)]
+
+
+def recent_exports(limit: int = 8, device_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    rows = load_export_registry()
+    if device_id:
+        rows = [r for r in rows if sanitize_device_id(r.get("device_id")) == device_id]
+    rows = list(reversed(rows))
+    out: List[Dict[str, Any]] = []
+    for item in rows[: max(1, limit)]:
+        out.append(
+            {
+                "export_id": item.get("export_id"),
+                "exported_at_iso": item.get("exported_at_iso"),
+                "collection_id": item.get("collection_id"),
+                "device_id": sanitize_device_id(item.get("device_id")),
+                "filename": item.get("filename"),
+                "rows": int(item.get("rows", 0) or 0),
+                "ts_min": float_or_none(item.get("ts_min")),
+                "ts_max": float_or_none(item.get("ts_max")),
+                "csv_sha256": item.get("csv_sha256"),
+                "manifest_path": item.get("manifest_path"),
+            }
+        )
+    return out
+
+
+def update_notebook_input_config(manifest: Dict[str, Any]) -> None:
+    ensure_notebook_output_dirs()
+    cfg: Dict[str, Any] = {}
+    if DATA_SOURCE_CONFIG_PATH.exists():
+        try:
+            raw = json.loads(DATA_SOURCE_CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                cfg = raw
+        except Exception:
+            cfg = {}
+
+    cfg.update(
+        {
+            "data_source": "CSV",
+            "csv_file": manifest.get("filename"),
+            "collection_id": manifest.get("collection_id"),
+            "device_id": manifest.get("device_id"),
+            "rows": manifest.get("rows"),
+            "export_id": manifest.get("export_id"),
+            "csv_sha256": manifest.get("csv_sha256"),
+            "source": "oracle_export",
+            "updated_at": datetime.now().strftime("%Y%m%d_%H%M%S"),
+        }
+    )
+
+    try:
+        DATA_SOURCE_CONFIG_PATH.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+    try:
+        EDA_INPUT_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def persist_export_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
+    ensure_notebook_output_dirs()
+    export_id = str(manifest.get("export_id") or "").strip()
+    if not export_id:
+        export_id = f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    manifest_path = NOTEBOOKS_EXPORTS_DIR / f"{export_id}.json"
+    i = 1
+    while manifest_path.exists():
+        manifest_path = NOTEBOOKS_EXPORTS_DIR / f"{export_id}_{i}.json"
+        i += 1
+
+    out = dict(manifest)
+    out["manifest_path"] = str(manifest_path)
+
+    try:
+        manifest_path.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+    append_export_registry(out)
+    update_notebook_input_config(out)
+    return out
+
+
 def table_columns(conn: oracledb.Connection, table_name: str = "sensor_data") -> Dict[str, bool]:
     key = table_name.lower()
     if key in _column_cache:
@@ -467,11 +691,39 @@ def health():
 
 
 @app.post("/api/reset_db")
-def reset_db(authorization: Optional[str] = Header(default=None)):
+async def reset_db(request: Request, authorization: Optional[str] = Header(default=None)):
     require_bearer(authorization)
+    body = await read_json_body(request)
+    force_reset = sanitize_bool(body.get("force"), False)
+    device_id = sanitize_device_id(body.get("device_id") or request.query_params.get("device_id"))
+
     with db_conn() as conn:
         try:
             conn.autocommit = False
+
+            if not force_reset:
+                try:
+                    total_row = fetch_one(conn, "SELECT COUNT(*) AS total FROM sensor_data") or {"total": 0}
+                    total_rows = int(total_row.get("total", 0) or 0)
+                    if total_rows > 0:
+                        pending = pending_collections_for_export(conn, device_id=None, limit=None)
+                        if pending:
+                            preview = pending[:20]
+                            raise HTTPException(
+                                status_code=409,
+                                detail={
+                                    "message": "Existem colecoes sem exportacao registrada. Exporte para CSV antes de resetar o banco.",
+                                    "pending_collections": preview,
+                                    "pending_count": len(pending),
+                                    "force_hint": "Reenvie com {'force': true} somente se quiser apagar mesmo sem export.",
+                                },
+                            )
+                except Exception as exc:
+                    if isinstance(exc, HTTPException):
+                        raise
+                    if oracle_error_code(exc) != 942:
+                        raise
+
             try:
                 exec_sql(conn, "DROP TABLE sensor_data PURGE")
             except Exception as exc:
@@ -532,6 +784,8 @@ def reset_db(authorization: Optional[str] = Header(default=None)):
                 conn.rollback()
             except Exception:
                 pass
+            if isinstance(exc, HTTPException):
+                raise
             raise HTTPException(status_code=500, detail=f"Erro ao resetar banco: {exc}")
 
     return JSONResponse(
@@ -540,6 +794,404 @@ def reset_db(authorization: Optional[str] = Header(default=None)):
             "message": "Banco resetado com sucesso. Tabela sensor_data recriada.",
             "db_vendor": "ORACLE",
             "script_ref": "../database/reset_database.sql",
+            "forced": force_reset,
+        }
+    )
+
+
+@app.post("/api/export_csv")
+async def export_csv(request: Request, authorization: Optional[str] = Header(default=None)):
+    """Exporta a coleta atual (ou collection_id informado) para CSV em notebooks/output/data/."""
+    require_bearer(authorization)
+
+    body = await read_json_body(request)
+    device_id = sanitize_device_id(body.get("device_id") or request.query_params.get("device_id"))
+    cfg = load_state(device_id, {"mode": "PAUSE", "sample_rate": 4, "ingest_enabled": True})
+
+    collection_id = str(body.get("collection_id") or cfg.get("collection_id") or "").strip()
+    if not collection_id or collection_id == "v5_stream":
+        raise HTTPException(status_code=400, detail="collection_id invalido. Inicie uma nova coleta antes de exportar.")
+
+    ensure_notebook_output_dirs()
+
+    where = "collection_id = :cid"
+    params: Dict[str, Any] = {"cid": collection_id}
+    if device_id:
+        where += " AND device_id = :device_id"
+        params["device_id"] = device_id
+
+    sql = f"""
+        SELECT
+            id,
+            ts_epoch            AS timestamp,
+            temperature,
+            vibration,
+            accel_x_g, accel_y_g, accel_z_g,
+            gyro_x_dps, gyro_y_dps, gyro_z_dps,
+            sample_rate,
+            fan_state,
+            collection_id,
+            cmd_speed_label,
+            rot_state_label,
+            use_state_label,
+            vib_profile_label,
+            label_source,
+            transition_marker,
+            device_id
+        FROM sensor_data
+        WHERE {where}
+        ORDER BY ts_epoch ASC
+    """
+    agg_sql = f"""
+        SELECT
+            COUNT(*) AS cnt,
+            MIN(ts_epoch) AS ts_min,
+            MAX(ts_epoch) AS ts_max,
+            MIN(sample_rate) AS sample_rate_min,
+            MAX(sample_rate) AS sample_rate_max
+        FROM sensor_data
+        WHERE {where}
+    """
+    by_class_sql = f"""
+        SELECT fan_state, COUNT(*) AS cnt
+        FROM sensor_data
+        WHERE {where}
+        GROUP BY fan_state
+        ORDER BY fan_state
+    """
+
+    try:
+        with db_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, params)
+            columns = [desc[0].lower() for desc in cursor.description]
+            rows = cursor.fetchall()
+            cursor.close()
+            agg = fetch_one(conn, agg_sql, params) or {}
+            by_class_rows = fetch_all(conn, by_class_sql, params)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Erro ao consultar Oracle: {exc}")
+
+    if not rows:
+        did = f" e device_id='{device_id}'" if device_id else ""
+        raise HTTPException(status_code=404, detail=f"Nenhum dado para collection_id='{collection_id}'{did}")
+
+    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"raw_sensor_data_{ts_str}.csv"
+    filepath = NOTEBOOKS_DATA_DIR / filename
+    i = 1
+    while filepath.exists():
+        filename = f"raw_sensor_data_{ts_str}_{i}.csv"
+        filepath = NOTEBOOKS_DATA_DIR / filename
+        i += 1
+
+    with filepath.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(columns)
+        writer.writerows(rows)
+
+    csv_sha256 = sha256_file(filepath)
+    ts_min = float_or_none(agg.get("ts_min"))
+    ts_max = float_or_none(agg.get("ts_max"))
+    duration_s = (ts_max - ts_min) if (ts_min is not None and ts_max is not None) else None
+    export_id = f"exp_{ts_str}_{slug(collection_id, 48) or 'collection'}"
+
+    by_class: Dict[str, int] = {}
+    for item in by_class_rows:
+        key = str(item.get("fan_state") or "UNKNOWN")
+        by_class[key] = int(item.get("cnt", 0) or 0)
+
+    manifest = persist_export_manifest(
+        {
+            "export_id": export_id,
+            "exported_at_iso": now_iso(),
+            "exported_at_epoch": microtime(),
+            "db_vendor": "ORACLE",
+            "source_table": "sensor_data",
+            "filter": {"collection_id": collection_id, "device_id": device_id},
+            "collection_id": collection_id,
+            "device_id": device_id,
+            "filename": filename,
+            "csv_path": str(filepath),
+            "csv_sha256": csv_sha256,
+            "rows": int(agg.get("cnt", len(rows)) or len(rows)),
+            "ts_min": ts_min,
+            "ts_max": ts_max,
+            "duration_s": duration_s,
+            "sample_rate_min": float_or_none(agg.get("sample_rate_min")),
+            "sample_rate_max": float_or_none(agg.get("sample_rate_max")),
+            "classes": by_class,
+            "status": "success",
+        }
+    )
+
+    return JSONResponse(
+        {
+            "status": "success",
+            "export_id": manifest.get("export_id"),
+            "filename": filename,
+            "path": str(filepath),
+            "manifest_path": manifest.get("manifest_path"),
+            "collection_id": collection_id,
+            "device_id": device_id,
+            "rows": manifest.get("rows", len(rows)),
+            "ts_min": manifest.get("ts_min"),
+            "ts_max": manifest.get("ts_max"),
+            "duration_s": manifest.get("duration_s"),
+            "csv_sha256": csv_sha256,
+            "classes": by_class,
+        }
+    )
+
+
+@app.post("/api/export_db_zip")
+async def export_db_zip(request: Request, authorization: Optional[str] = Header(default=None)):
+    """Exporta dados do banco em arquivo .zip com CSV(s), sem depender de acesso direto ao Oracle."""
+    require_bearer(authorization)
+
+    body = await read_json_body(request)
+    device_id = sanitize_device_id(body.get("device_id") or request.query_params.get("device_id"))
+    cfg = load_state(device_id, {"mode": "PAUSE", "sample_rate": 4, "ingest_enabled": True})
+
+    mode_raw = str(body.get("mode") or request.query_params.get("mode") or "all").strip().lower()
+    mode = "current" if mode_raw in {"current", "collection", "coleta"} else "all"
+    split_by_collection = sanitize_bool(body.get("split_by_collection"), mode == "all")
+
+    collection_id = str(body.get("collection_id") or request.query_params.get("collection_id") or "").strip()
+    if mode == "current" and not collection_id:
+        collection_id = str(cfg.get("collection_id") or "").strip()
+    if mode == "current" and (not collection_id or collection_id == "v5_stream"):
+        raise HTTPException(status_code=400, detail="collection_id invalido para exportacao da coleta atual.")
+
+    ensure_notebook_output_dirs()
+
+    where_parts: List[str] = ["1=1"]
+    params: Dict[str, Any] = {}
+    if mode == "current":
+        where_parts.append("collection_id = :collection_id")
+        params["collection_id"] = collection_id
+    if device_id:
+        where_parts.append("device_id = :device_id")
+        params["device_id"] = device_id
+    base_where = " AND ".join(where_parts)
+
+    count_sql = f"SELECT COUNT(*) AS total FROM sensor_data WHERE {base_where}"
+    base_sql = f"""
+        SELECT
+            id,
+            ts_epoch            AS timestamp,
+            temperature,
+            vibration,
+            accel_x_g, accel_y_g, accel_z_g,
+            gyro_x_dps, gyro_y_dps, gyro_z_dps,
+            sample_rate,
+            fan_state,
+            collection_id,
+            cmd_speed_label,
+            rot_state_label,
+            use_state_label,
+            vib_profile_label,
+            label_source,
+            transition_marker,
+            device_id
+        FROM sensor_data
+        WHERE {base_where}
+    """
+    groups_sql = f"""
+        SELECT NVL(collection_id, '(sem_collection_id)') AS collection_key, COUNT(*) AS cnt
+        FROM sensor_data
+        WHERE {base_where}
+        GROUP BY NVL(collection_id, '(sem_collection_id)')
+        ORDER BY COUNT(*) DESC
+    """
+
+    try:
+        with db_conn() as conn:
+            total_row = fetch_one(conn, count_sql, params) or {"total": 0}
+            total_rows = int(total_row.get("total", 0) or 0)
+            if total_rows <= 0:
+                did = f" e device_id='{device_id}'" if device_id else ""
+                raise HTTPException(status_code=404, detail=f"Nenhum dado encontrado para exportacao{did}.")
+
+            ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            scope_tag = slug(collection_id if mode == "current" else f"{device_id or 'all'}_all", 48) or "sensor_data"
+            filename = f"sensor_data_{scope_tag}_{ts_str}.zip"
+            zip_path = NOTEBOOKS_DATA_DIR / filename
+            i = 1
+            while zip_path.exists():
+                filename = f"sensor_data_{scope_tag}_{ts_str}_{i}.zip"
+                zip_path = NOTEBOOKS_DATA_DIR / filename
+                i += 1
+
+            csv_entries: List[Dict[str, Any]] = []
+
+            def write_csv_entry(entry_name: str, query_sql: str, query_params: Dict[str, Any]) -> int:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(query_sql, query_params)
+                    columns = [desc[0].lower() for desc in cursor.description]
+                    rows = cursor.fetchall()
+                finally:
+                    cursor.close()
+
+                if not rows:
+                    return 0
+                buffer = io.StringIO()
+                writer = csv.writer(buffer)
+                writer.writerow(columns)
+                writer.writerows(rows)
+                csv_text = buffer.getvalue()
+                with zipfile.ZipFile(zip_path, mode="a", compression=zipfile.ZIP_DEFLATED) as zf:
+                    zf.writestr(entry_name, csv_text)
+                return len(rows)
+
+            if mode == "all" and split_by_collection:
+                grouped = fetch_all(conn, groups_sql, params)
+                if not grouped:
+                    grouped = [{"collection_key": "(sem_collection_id)", "cnt": total_rows}]
+                for g in grouped:
+                    col_key = str(g.get("collection_key") or "(sem_collection_id)")
+                    qparams = dict(params)
+                    qparams["collection_key"] = col_key
+                    qsql = (
+                        f"{base_sql} AND NVL(collection_id, '(sem_collection_id)') = :collection_key "
+                        "ORDER BY ts_epoch ASC"
+                    )
+                    safe_name = slug(col_key, 48) or "sem_collection_id"
+                    entry_name = f"raw_sensor_data_{safe_name}.csv"
+                    rows_written = write_csv_entry(entry_name, qsql, qparams)
+                    if rows_written > 0:
+                        csv_entries.append(
+                            {
+                                "entry_name": entry_name,
+                                "collection_id": None if col_key == "(sem_collection_id)" else col_key,
+                                "rows": rows_written,
+                            }
+                        )
+            else:
+                one_tag = slug(collection_id if mode == "current" else f"{device_id or 'all'}", 48) or "all"
+                entry_name = f"raw_sensor_data_{one_tag}.csv"
+                rows_written = write_csv_entry(entry_name, f"{base_sql} ORDER BY ts_epoch ASC", params)
+                if rows_written > 0:
+                    csv_entries.append(
+                        {
+                            "entry_name": entry_name,
+                            "collection_id": collection_id if mode == "current" else None,
+                            "rows": rows_written,
+                        }
+                    )
+
+            manifest = {
+                "exported_at_iso": now_iso(),
+                "exported_at_epoch": microtime(),
+                "mode": mode,
+                "split_by_collection": split_by_collection,
+                "device_id": device_id,
+                "collection_id": collection_id if mode == "current" else None,
+                "rows": total_rows,
+                "csv_entries": csv_entries,
+            }
+            with zipfile.ZipFile(zip_path, mode="a", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
+    except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise
+        raise HTTPException(status_code=500, detail=f"Erro ao exportar ZIP: {exc}")
+
+    return JSONResponse(
+        {
+            "status": "success",
+            "filename": filename,
+            "path": str(zip_path),
+            "mode": mode,
+            "split_by_collection": split_by_collection,
+            "device_id": device_id,
+            "collection_id": collection_id if mode == "current" else None,
+            "rows": total_rows,
+            "csv_entries": len(csv_entries),
+            "zip_sha256": sha256_file(zip_path),
+        }
+    )
+
+
+@app.get("/api/export_status")
+def export_status(request: Request, authorization: Optional[str] = Header(default=None)):
+    require_bearer(authorization)
+    device_id = sanitize_device_id(request.query_params.get("device_id"))
+    recent_limit = parse_int(request.query_params.get("recent_limit"), default=8, minimum=1, maximum=30)
+    pending_limit = parse_int(request.query_params.get("pending_limit"), default=12, minimum=1, maximum=100)
+
+    cfg = load_state(device_id, {"mode": "PAUSE", "sample_rate": 4, "ingest_enabled": True})
+    current_collection = str(cfg.get("collection_id") or "").strip()
+
+    registry_rows = load_export_registry()
+    registry_count = len(registry_rows)
+    recents = recent_exports(limit=recent_limit, device_id=device_id)
+    latest_export = recents[0] if recents else None
+
+    exported_ids = exported_collection_ids()
+    exported_pairs = exported_collection_device_pairs()
+    current_exported = False
+    if current_collection:
+        if device_id:
+            current_exported = (current_collection, device_id) in exported_pairs
+        else:
+            current_exported = current_collection in exported_ids
+
+    current_last_export = None
+    for item in reversed(registry_rows):
+        cid = str(item.get("collection_id") or "").strip()
+        did = sanitize_device_id(item.get("device_id"))
+        if cid != current_collection:
+            continue
+        if device_id and did != device_id:
+            continue
+        current_last_export = {
+            "export_id": item.get("export_id"),
+            "exported_at_iso": item.get("exported_at_iso"),
+            "collection_id": cid,
+            "device_id": did,
+            "filename": item.get("filename"),
+            "rows": int(item.get("rows", 0) or 0),
+            "ts_min": float_or_none(item.get("ts_min")),
+            "ts_max": float_or_none(item.get("ts_max")),
+            "manifest_path": item.get("manifest_path"),
+            "csv_sha256": item.get("csv_sha256"),
+        }
+        break
+
+    db_total_rows = 0
+    pending_all: List[Dict[str, Any]] = []
+    try:
+        with db_conn() as conn:
+            where = ""
+            params: Dict[str, Any] = {}
+            if device_id:
+                where = "WHERE device_id = :device_id"
+                params["device_id"] = device_id
+            total_row = fetch_one(conn, f"SELECT COUNT(*) AS total FROM sensor_data {where}", params) or {"total": 0}
+            db_total_rows = int(total_row.get("total", 0) or 0)
+            pending_all = pending_collections_for_export(conn, device_id=device_id, limit=None)
+    except Exception:
+        pending_all = []
+        db_total_rows = 0
+
+    pending_preview = pending_all[:pending_limit]
+
+    return JSONResponse(
+        {
+            "status": "ok",
+            "device_id": device_id,
+            "db_rows": db_total_rows,
+            "current_collection": current_collection,
+            "current_collection_exported": current_exported,
+            "current_collection_last_export": current_last_export,
+            "latest_export": latest_export,
+            "recent_exports": recents,
+            "pending_count": len(pending_all),
+            "pending_collections": pending_preview,
+            "pending_truncated": len(pending_all) > len(pending_preview),
+            "registry_entries": registry_count,
         }
     )
 
@@ -568,8 +1220,9 @@ async def set_mode(request: Request, authorization: Optional[str] = Header(defau
     if request.method == "POST":
         payload = dict(input_data)
         is_new_collection = payload.get("new_collection") is True
+        collection_description = slug(payload.get("collection_description"), 40)
         network_commit = sanitize_bool(payload.get("network_commit"), False)
-        for internal_key in ("new_collection", "network_commit", "device_id"):
+        for internal_key in ("new_collection", "collection_description", "network_commit", "device_id"):
             payload.pop(internal_key, None)
 
         allowed = {
@@ -623,6 +1276,8 @@ async def set_mode(request: Request, authorization: Optional[str] = Header(defau
             rate = int(current.get("sample_rate", 4))
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             current["collection_id"] = f"col_{ts}_{rate}hz"
+            if collection_description:
+                current["collection_id"] = f"{current['collection_id']}_{collection_description}"[:80]
 
         current = sanitize_state(current, {"mode": "PAUSE", "sample_rate": 4, "ingest_enabled": True})
         if not save_state(current, device_id):

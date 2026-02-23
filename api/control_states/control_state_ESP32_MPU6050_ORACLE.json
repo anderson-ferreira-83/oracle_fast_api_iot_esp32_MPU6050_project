@@ -1,11 +1,11 @@
 {
-  "mode": "HIGH",
+  "mode": "PAUSE",
   "sample_rate": 100,
   "ingest_enabled": true,
-  "cmd_speed_label": "HIGH",
-  "rot_state_label": "ROTATING",
-  "use_state_label": "NO_LOAD",
-  "vib_profile_label": "NATURAL",
+  "cmd_speed_label": "UNKNOWN",
+  "rot_state_label": "UNKNOWN",
+  "use_state_label": "UNKNOWN",
+  "vib_profile_label": "UNKNOWN",
   "label_source": "CONTROL",
   "transition_marker": 0,
   "network_revision": 1771101006699,
@@ -30,7 +30,7 @@
     "192.168.0.105:8000"
   ],
   "api_path": "/api/ingest",
-  "collection_id": "col_20260223_115149_100hz",
+  "collection_id": "v5_stream",
   "new_collection": true,
   "sends_per_sec": 5,
   "transition_duration_s": 10

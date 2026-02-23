@@ -45,29 +45,77 @@ def _save_config(config_path, data):
         pass
 
 
-def select_raw_source(data_dir, config_path, allow_sql=True, default_source='CSV'):
-    """Seleciona fonte de dados RAW (SQL ou CSV) e persiste a escolha.
+def select_raw_source(data_dir, config_path, allow_sql=True, default_source='AUTO'):
+    """Seleciona fonte de dados RAW (AUTO/SQL/CSV) e persiste a escolha.
 
-    Retorna: (data_source, csv_file)
+    Retorna: (resolved_source, csv_file), onde resolved_source ∈ {'SQL', 'CSV'}.
     """
+    valid_sources = ('AUTO', 'SQL', 'CSV')
+    default_source = str(default_source or 'AUTO').upper()
+    if default_source not in valid_sources:
+        default_source = 'AUTO'
+
     cfg = _load_config(config_path, defaults={
         'data_source': default_source,
         'csv_file': None,
     })
 
-    data_source = cfg.get('data_source', default_source)
-    if data_source not in ('SQL', 'CSV'):
-        data_source = default_source
+    requested_source = str(cfg.get('data_source', default_source) or default_source).upper()
+    if requested_source not in valid_sources:
+        requested_source = default_source
 
-    csv_file = cfg.get('csv_file')
     csv_files = list_raw_csv(data_dir)
+    csv_file = cfg.get('csv_file')
     if csv_file not in csv_files:
         csv_file = csv_files[0] if csv_files else None
 
+    metrics_dir = os.path.dirname(config_path) or '.'
+    manifest_path = os.path.join(metrics_dir, 'eda_input_manifest.json')
+
+    def _manifest_csv_candidate():
+        if not os.path.exists(manifest_path):
+            return None
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                manifest = json.load(f)
+            if not isinstance(manifest, dict):
+                return None
+            raw_name = manifest.get('filename') or manifest.get('csv_path')
+            if not raw_name:
+                return None
+            cand = os.path.basename(str(raw_name))
+            return cand if cand in csv_files else None
+        except Exception:
+            return None
+
+    def _resolve(source_req, selected_csv):
+        source_req = str(source_req or '').upper()
+        selected_csv = selected_csv if selected_csv in csv_files else (csv_files[0] if csv_files else None)
+        manifest_csv = _manifest_csv_candidate()
+
+        if source_req == 'AUTO':
+            if manifest_csv:
+                return 'CSV', manifest_csv, f'manifest:{manifest_csv}'
+            if allow_sql:
+                return 'SQL', None, 'sql_live'
+            return 'CSV', selected_csv, f'csv_fallback:{selected_csv or "none"}'
+
+        if source_req == 'SQL':
+            if allow_sql:
+                return 'SQL', None, 'sql_live'
+            return 'CSV', selected_csv, f'sql_disabled_csv:{selected_csv or "none"}'
+
+        # CSV
+        return 'CSV', selected_csv, f'csv_selected:{selected_csv or "none"}'
+
+    resolved_source, resolved_csv, resolution_reason = _resolve(requested_source, csv_file)
+
     def _persist():
         _save_config(config_path, {
-            'data_source': data_source,
-            'csv_file': csv_file,
+            'data_source': requested_source,
+            'resolved_source': resolved_source,
+            'resolution_reason': resolution_reason,
+            'csv_file': resolved_csv if resolved_source == 'CSV' else csv_file,
             'updated_at': datetime.now().strftime('%Y%m%d_%H%M%S'),
         })
 
@@ -79,17 +127,24 @@ def select_raw_source(data_dir, config_path, allow_sql=True, default_source='CSV
         _has_widgets = False
         print(f'[AVISO] ipywidgets nao disponivel: {e}')
         _persist()
-        print(f'[INFO] Usando padroes: DATA_SOURCE={data_source}, CSV_FILE={csv_file}')
+        print(f'[INFO] Requested source: {requested_source}')
+        print(f'[INFO] Resolved source:  {resolved_source}')
+        if resolved_source == 'CSV':
+            print(f'[INFO] CSV file:        {resolved_csv}')
 
     if _has_widgets:
-        source_options = [('SQL (nova coleta)', 'SQL'), ('CSV (output/data)', 'CSV')]
-        if not allow_sql:
-            source_options = [('CSV (output/data)', 'CSV')]
-            data_source = 'CSV'
+        source_options = [('AUTO (recomendado)', 'AUTO')]
+        if allow_sql:
+            source_options.append(('SQL (nova coleta)', 'SQL'))
+        source_options.append(('CSV (output/data)', 'CSV'))
+
+        if not allow_sql and requested_source == 'SQL':
+            requested_source = 'AUTO'
+            resolved_source, resolved_csv, resolution_reason = _resolve(requested_source, csv_file)
 
         source_dropdown = widgets.Dropdown(
             options=source_options,
-            value=data_source,
+            value=requested_source,
             description='Fonte:',
             style={'description_width': 'initial'},
         )
@@ -106,19 +161,24 @@ def select_raw_source(data_dir, config_path, allow_sql=True, default_source='CSV
         out = widgets.Output()
 
         def _update_config(_=None):
-            nonlocal data_source, csv_file
-            data_source = source_dropdown.value
-            csv_file = csv_dropdown.value if csv_dropdown.value != '<nenhum arquivo>' else None
+            nonlocal requested_source, csv_file, resolved_source, resolved_csv, resolution_reason
+            requested_source = str(source_dropdown.value or 'AUTO').upper()
+            selected_csv = csv_dropdown.value if csv_dropdown.value != '<nenhum arquivo>' else None
+            if selected_csv in csv_files:
+                csv_file = selected_csv
+            resolved_source, resolved_csv, resolution_reason = _resolve(requested_source, csv_file)
             _persist()
             with out:
                 clear_output()
-                print(f'Fonte selecionada: {data_source}')
-                if data_source == 'CSV':
-                    if csv_file:
-                        print(f'Arquivo CSV: {csv_file}')
+                print(f'Fonte solicitada: {requested_source}')
+                print(f'Fonte resolvida:  {resolved_source}')
+                print(f'Regra:            {resolution_reason}')
+                if resolved_source == 'CSV':
+                    if resolved_csv:
+                        print(f'Arquivo CSV:      {resolved_csv}')
                     else:
-                        print('Nenhum CSV encontrado em output/data.')
-                print(f'Config salvo em: {config_path}')
+                        print('Arquivo CSV:      <nenhum arquivo>')
+                print(f'Config salvo em:  {config_path}')
 
         def _on_source_change(change):
             if change.get('name') == 'value':
@@ -135,7 +195,7 @@ def select_raw_source(data_dir, config_path, allow_sql=True, default_source='CSV
         display(widgets.VBox([source_dropdown, csv_dropdown, out]))
         _update_config()
 
-    return data_source, csv_file
+    return resolved_source, resolved_csv if resolved_source == 'CSV' else None
 
 
 def select_features_csv(data_dir, config_path, eda_run_config_path=None):

@@ -53,6 +53,27 @@
       flex-wrap: wrap;
       align-items: center;
     }
+    .prep-actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: nowrap;
+      align-items: center;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+    .prep-actions-row .ctrl-btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    .prep-actions-row::-webkit-scrollbar {
+      height: 6px;
+    }
+    .prep-actions-row::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 999px;
+    }
     .ctrl-btn {
       padding: 12px 24px;
       font-size: 0.95rem;
@@ -67,6 +88,12 @@
     .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .ctrl-btn-new { background: #8b5cf6; color: #fff; }
     .ctrl-btn-reset { background: #ef4444; color: #fff; font-size: 0.85rem; padding: 10px 18px; }
+    .ctrl-btn-export { background: #0d9488; color: #fff; border-color: #0d9488; font-size: 0.85rem; padding: 10px 18px; }
+    .ctrl-btn-export-zip { background: #7c3aed; color: #fff; border-color: #7c3aed; font-size: 0.85rem; padding: 10px 18px; }
+    .ctrl-btn-export:hover:not(:disabled) { background: #0f766e; border-color: #0f766e; }
+    .ctrl-btn-export-zip:hover:not(:disabled) { background: #6d28d9; border-color: #6d28d9; }
+    .ctrl-btn-export:disabled { background: #94a3b8; border-color: #94a3b8; cursor: not-allowed; }
+    .ctrl-btn-export-zip:disabled { background: #94a3b8; border-color: #94a3b8; cursor: not-allowed; }
     .ctrl-btn-raw { background: #3b82f6; color: #fff; }
     .ctrl-btn-pause { background: #f59e0b; color: #000; }
     .ctrl-btn-low { background: #00d9ff; color: #000; }
@@ -135,6 +162,46 @@
       min-width: 200px;
     }
     .hz-control input[type="range"] { flex: 1; accent-color: var(--primary); cursor: pointer; }
+    .hz-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .hz-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 44px;
+    }
+    .hz-slider-wrap {
+      min-width: 360px;
+      flex: 1;
+      display: grid;
+      gap: 2px;
+    }
+    .hz-slider-wrap input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .hz-ticks {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      line-height: 1;
+      padding: 0 2px;
+      user-select: none;
+    }
+    .hz-ticks span {
+      white-space: nowrap;
+    }
     .hz-display {
       font-family: 'JetBrains Mono', monospace;
       font-size: 1.2rem;
@@ -142,6 +209,7 @@
       color: var(--primary);
       min-width: 60px;
       text-align: center;
+      white-space: nowrap;
     }
 
     /* Collection ID */
@@ -224,6 +292,49 @@
       border-color: rgba(245, 158, 11, 0.45);
       background: rgba(245, 158, 11, 0.12);
       color: #b45309;
+    }
+    .export-trace {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(14, 116, 144, 0.32);
+      background: rgba(14, 116, 144, 0.08);
+      display: grid;
+      gap: 8px;
+    }
+    .export-trace-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: #0f172a;
+    }
+    .export-trace-body {
+      font-size: 0.76rem;
+      color: #334155;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .export-trace-mini {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .export-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(51, 65, 85, 0.25);
+      background: rgba(255, 255, 255, 0.7);
+      color: #1e293b;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .runtime-panel {
       margin-top: 6px;
@@ -1081,16 +1192,36 @@
         <span class="ingest-badge ingest-on" id="ingestBadge" style="margin-left:auto;">DB: ON</span>
         <a class="card-doc-btn" href="doc-etapa1.html" target="_blank" title="Ver documentacao desta etapa">?</a>
       </div>
-      <div class="step-controls">
+      <div class="prep-actions-row" aria-label="Acoes de coleta">
         <button class="ctrl-btn ctrl-btn-new" onclick="newCollection()" title="Cria nova sessao de coleta com ID unico baseado na taxa atual">Nova Coleta</button>
-        <div class="hz-control">
-          <span style="font-size:0.85rem;font-weight:600;color:var(--muted);white-space:nowrap;">Taxa:</span>
-          <input type="range" id="hzSlider" min="1" max="150" value="100" oninput="updateHzDisplay(this.value)" onchange="setSampleRate(this.value)" title="Define a taxa de amostragem do ESP32 (Hz)">
-          <span class="hz-display" id="hzDisplay">4 Hz</span>
-        </div>
         <button class="ctrl-btn ctrl-btn-ingest-pause" id="btnIngestPause" onclick="pauseIngest()" title="Pausa a gravacao de dados no Oracle XE">Pausar DB</button>
         <button class="ctrl-btn ctrl-btn-ingest-resume" id="btnIngestResume" onclick="resumeIngest()" disabled title="Retoma a gravacao de dados no Oracle XE">Retomar DB</button>
+        <button class="ctrl-btn ctrl-btn-export" id="btnExportCsv" onclick="exportToCSV()" title="Exporta manualmente a coleta atual para CSV (util para checkpoints durante a coleta)">Exportar CSV</button>
+        <button class="ctrl-btn ctrl-btn-export-zip" id="btnExportZip" onclick="exportDatabaseZip()" title="Exporta os dados do banco (colecao atual ou tudo) em arquivo .zip sem precisar abrir o Oracle">Exportar Banco ZIP</button>
         <button class="ctrl-btn ctrl-btn-reset" onclick="resetDatabase()" title="Remove TODOS os dados do banco Oracle XE (irreversivel)">Zerar Banco</button>
+      </div>
+      <div class="hz-row" aria-label="Controle de taxa">
+        <span class="hz-label">Taxa:</span>
+        <div class="hz-slider-wrap">
+          <input type="range" id="hzSlider" min="1" max="150" value="100" list="hzMarks" oninput="updateHzDisplay(this.value)" onchange="setSampleRate(this.value)" title="Define a taxa de amostragem do ESP32 (Hz)">
+          <datalist id="hzMarks">
+            <option value="1"></option>
+            <option value="25"></option>
+            <option value="50"></option>
+            <option value="100"></option>
+            <option value="125"></option>
+            <option value="150"></option>
+          </datalist>
+          <div class="hz-ticks">
+            <span>1</span>
+            <span>25</span>
+            <span>50</span>
+            <span>100</span>
+            <span>125</span>
+            <span>150</span>
+          </div>
+        </div>
+        <span class="hz-display" id="hzDisplay">4 Hz</span>
       </div>
       <div style="margin-top:10px;font-size:0.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
         <span>Sessao:</span>
@@ -1098,6 +1229,16 @@
         <span class="meta-chip" id="activeDeviceId">device: --</span>
         <span class="meta-chip" id="collectionHzTag" style="display:none;"></span>
         <span class="meta-chip" id="collectionConfigInfo">config: --</span>
+        <span class="meta-chip" id="monitorStateChip">monitor: aguardando coleta</span>
+      </div>
+      <div id="exportTracePanel" class="export-trace">
+        <div class="export-trace-head">
+          <strong>Rastreabilidade EDA</strong>
+          <span class="meta-chip" id="exportCurrentChip">coleta: --</span>
+          <span class="meta-chip" id="exportPendingChip">pendentes: --</span>
+        </div>
+        <div class="export-trace-body" id="exportSummaryText">Aguardando status de exportacao...</div>
+        <div class="export-trace-mini" id="exportRecentList"></div>
       </div>
       <div id="collectionWarningBox" class="control-warning" style="display:none;">
         <div id="collectionWarningText"></div>
@@ -1108,17 +1249,6 @@
       <div id="ingestNote" style="margin-top:8px;font-size:0.75rem;color:#92400e;font-family:'JetBrains Mono',monospace;display:none;">
         Gravacao no DB esta pausada: validacao de taxa e estatisticas nao atualizam.
       </div>
-      <details class="ctrl-details">
-        <summary>Diagnostico de conexao</summary>
-        <div class="ctrl-details-body">
-          <div id="lastDbInfo" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;">
-            Ultimo no DB: --
-          </div>
-          <div id="runtimeInfoControl" class="runtime-panel no_data" style="margin-top:8px;">
-            Runtime: --
-          </div>
-        </div>
-      </details>
     </div>
 
     <!-- ETAPA 1B: Gestao de Rede -->
@@ -1154,6 +1284,17 @@
               <span class="net-diag-icon fail" id="diagDataIcon">✗</span>
               <span id="diagDataLabel">Dados</span>
             </div>
+          </div>
+        </div>
+      </details>
+      <details class="ctrl-details" style="margin-top:0;margin-bottom:12px;">
+        <summary>Diagnostico de conexao</summary>
+        <div class="ctrl-details-body">
+          <div id="lastDbInfo" style="font-size:0.75rem;font-family:'JetBrains Mono',monospace;">
+            Ultimo no DB: --
+          </div>
+          <div id="runtimeInfoControl" class="runtime-panel no_data" style="margin-top:8px;">
+            Runtime: --
           </div>
         </div>
       </details>
@@ -1431,6 +1572,9 @@
                 Sequencia: LOW + ROT_ON -> MEDIUM + ROT_ON -> HIGH + ROT_ON
               </div>
             </div>
+            <div style="margin-bottom:8px;font-size:0.78rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">
+              Exportacao automatica CSV: <strong style="color:#0f766e;">SEMPRE ATIVA</strong> ao concluir automacao.
+            </div>
             <div class="step-controls" style="margin-bottom:8px;">
               <button class="ctrl-btn" style="background:#8b5cf6;color:#fff;padding:8px 16px;font-size:0.85rem;" onclick="startAutomation()" title="Inicia sequencia automatica de coleta por classe">Iniciar Automacao</button>
               <button class="ctrl-btn ctrl-btn-stop-auto" style="padding:8px 16px;font-size:0.85rem;" onclick="stopAutomation()" id="btnStopAuto" disabled title="Para a automacao em andamento">Parar</button>
@@ -1468,33 +1612,6 @@
           <div style="margin-top:8px;font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="trainBreakdown">Aguardando dados...</div>
         </div>
       </details>
-    </div>
-
-    <!-- ETAPA 4: Timer de Coleta -->
-    <div class="step-section">
-      <div class="step-header">
-        <div class="step-number">4</div>
-        <div class="step-title">Timer de Coleta</div>
-        <a class="card-doc-btn" href="doc-etapa4.html" target="_blank" title="Ver documentacao desta etapa" style="margin-left:auto;">?</a>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:30px;flex-wrap:wrap;">
-        <div style="text-align:center;">
-          <div class="timer-display-large" id="timer">00:00</div>
-          <div class="timer-meta" id="timerMetaText">Meta: 08:00 por rotulo</div>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
-            <button class="ctrl-btn" style="padding:6px 14px;font-size:0.8rem;background:var(--accent);color:#fff;" onclick="startTimer()" title="Inicia contagem do timer para o rotulo atual">Iniciar</button>
-            <button class="ctrl-btn" style="padding:6px 14px;font-size:0.8rem;background:#f59e0b;color:#000;" onclick="stopTimer()" title="Pausa o timer sem zerar">Pausar</button>
-            <button class="ctrl-btn" style="padding:6px 14px;font-size:0.8rem;background:#94a3b8;color:#fff;" onclick="resetTimer()" title="Zera o timer para 00:00">Zerar</button>
-          </div>
-        </div>
-        <a href="index.html" class="dashboard-link" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-          </svg>
-          Ir para Dashboard
-        </a>
-      </div>
     </div>
 
     <!-- Footer -->
@@ -1679,7 +1796,13 @@
       updateDeviceUi();
       networkStateTouched = false;
       networkStateLoaded = false;
+      lastExportedCollection = loadLastExportedCollection();
+      lastExportStatus = null;
+      lastExportStatusFetchMs = 0;
+      monitorOrigin = 'idle';
       initNetworkManager();
+      refreshExportStatus({ force: true, silent: true });
+      updateMonitorTag();
     }
 
     // --- State ---
@@ -1688,12 +1811,164 @@
     let validationStartTime = null;
     let lastSampleTimestamp = null;
     let lastDbRecord = null; // { ts, sample_rate, collection_id }
+    let lastExportedCollection = null; // collection_id exportado para CSV com sucesso
+    let lastExportStatus = null;
+    let lastExportStatusFetchMs = 0;
+    let exportStatusInFlight = false;
+    const EXPORT_STATUS_REFRESH_MS = 12000;
     let lastRuntime = null;
     let lastDeviceStatus = null;
     const RUNTIME_STATE_CLASSES = ['live', 'delay', 'stale', 'no_data'];
     let runtimeControlRenderState = 'no_data';
     let runtimeControlRenderHtml = '';
     const LAST_MODE_KEY = 'iot_fan_last_mode_before_pause';
+    let monitorOrigin = 'idle';
+
+    function exportMemoryKey() {
+      const device = normalizeDeviceId(DEVICE_ID) || 'default';
+      return `iot_last_exported_collection_${device}`;
+    }
+
+    function loadLastExportedCollection() {
+      try {
+        const val = localStorage.getItem(exportMemoryKey());
+        return (val && val.trim()) ? val.trim() : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function rememberLastExportedCollection(collectionId) {
+      const val = (collectionId && String(collectionId).trim()) ? String(collectionId).trim() : null;
+      lastExportedCollection = val;
+      try {
+        if (val) localStorage.setItem(exportMemoryKey(), val);
+        else localStorage.removeItem(exportMemoryKey());
+      } catch (e) { /* silent */ }
+    }
+
+    function formatExportWhen(isoString) {
+      if (!isoString) return '--';
+      const dt = new Date(isoString);
+      if (Number.isNaN(dt.getTime())) return String(isoString);
+      return dt.toLocaleString('pt-BR', { hour12: false });
+    }
+
+    function clearElement(el) {
+      if (!el) return;
+      while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function updateMonitorTag() {
+      const el = document.getElementById('monitorStateChip');
+      if (!el) return;
+      let text = 'monitor: aguardando coleta';
+      let warn = true;
+      if (autoInterval) {
+        text = 'monitor: automacao em andamento';
+        warn = true;
+      } else if (!ingestEnabled) {
+        text = 'monitor: db pausado';
+        warn = true;
+      } else if (String(currentMode || '').toUpperCase() !== 'PAUSE') {
+        text = 'monitor: coleta em andamento';
+        warn = true;
+      } else if (monitorOrigin === 'auto_finished') {
+        text = 'monitor: pos-automacao (tempo real)';
+        warn = false;
+      } else {
+        text = 'monitor: monitoramento em tempo real';
+        warn = false;
+      }
+      el.textContent = text;
+      el.className = `meta-chip${warn ? ' warn' : ''}`;
+    }
+
+    function renderExportStatus(status) {
+      const currentChip = document.getElementById('exportCurrentChip');
+      const pendingChip = document.getElementById('exportPendingChip');
+      const summaryEl = document.getElementById('exportSummaryText');
+      const recentEl = document.getElementById('exportRecentList');
+
+      const currentCollection = String(status?.current_collection || '').trim();
+      const currentExported = !!status?.current_collection_exported;
+      const pendingCount = Number(status?.pending_count || 0);
+      const dbRows = Number(status?.db_rows || 0);
+      const latest = status?.latest_export || null;
+      const recents = Array.isArray(status?.recent_exports) ? status.recent_exports : [];
+
+      if (currentChip) {
+        if (currentCollection && currentCollection !== 'v5_stream') {
+          currentChip.textContent = `coleta: ${currentCollection} | ${currentExported ? 'exportada' : 'nao exportada'}`;
+          currentChip.className = `meta-chip${currentExported ? '' : ' warn'}`;
+        } else {
+          currentChip.textContent = 'coleta: --';
+          currentChip.className = 'meta-chip';
+        }
+      }
+
+      if (pendingChip) {
+        pendingChip.textContent = `pendentes: ${pendingCount.toLocaleString()}`;
+        pendingChip.className = `meta-chip${pendingCount > 0 ? ' warn' : ''}`;
+      }
+
+      if (summaryEl) {
+        if (latest) {
+          const lines = Number(latest.rows || 0).toLocaleString();
+          summaryEl.textContent =
+            `Ultimo export: ${latest.export_id || '--'} | arquivo: ${latest.filename || '--'} | linhas: ${lines} | hora: ${formatExportWhen(latest.exported_at_iso)} | db_rows: ${dbRows.toLocaleString()}`;
+        } else {
+          summaryEl.textContent = `Nenhuma exportacao registrada ainda | db_rows: ${dbRows.toLocaleString()}`;
+        }
+      }
+
+      if (recentEl) {
+        clearElement(recentEl);
+        recents.slice(0, 4).forEach(item => {
+          const chip = document.createElement('span');
+          chip.className = 'export-chip';
+          const cid = item?.collection_id || '--';
+          const rows = Number(item?.rows || 0).toLocaleString();
+          chip.textContent = `${item?.export_id || '--'} | ${cid} | ${rows} linhas`;
+          recentEl.appendChild(chip);
+        });
+      }
+    }
+
+    async function refreshExportStatus(options = {}) {
+      const force = !!options?.force;
+      const silent = !!options?.silent;
+      const now = Date.now();
+      if (!force && (now - lastExportStatusFetchMs) < EXPORT_STATUS_REFRESH_MS) {
+        if (lastExportStatus) renderExportStatus(lastExportStatus);
+        return lastExportStatus;
+      }
+      if (exportStatusInFlight) return lastExportStatus;
+      exportStatusInFlight = true;
+      try {
+        const res = await fetch(
+          buildApiUrl('../api/export_status', { recent_limit: 6, pending_limit: 8 }),
+          { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } }
+        );
+        const data = await res.json();
+        const detailMsg = (typeof data?.detail === 'string')
+          ? data.detail
+          : (typeof data?.detail?.message === 'string' ? data.detail.message : null);
+        if (!res.ok) throw new Error(detailMsg || 'Falha ao obter status de exportacao');
+        lastExportStatus = data;
+        lastExportStatusFetchMs = Date.now();
+        if (data?.current_collection_exported && data?.current_collection) {
+          rememberLastExportedCollection(String(data.current_collection));
+        }
+        renderExportStatus(data);
+        return data;
+      } catch (e) {
+        if (!silent) console.warn('refreshExportStatus falhou:', e);
+        return lastExportStatus;
+      } finally {
+        exportStatusInFlight = false;
+      }
+    }
     let lastModeBeforePause = localStorage.getItem(LAST_MODE_KEY) || null;
     let labelState = { ...LABEL_DEFAULT_STATE };
     let labelsDirty = false;
@@ -1702,6 +1977,7 @@
     let networkProfiles = [];
     let networkStateTouched = false;
     let networkStateLoaded = false;
+    let deviceStatusInterval = null;
     let _lastEspSsid = '';
     let _netDragSrcIdx = -1;
 
@@ -2175,16 +2451,25 @@
         if (ipEl) ipEl.textContent = data.ip || '--';
         if (ssidEl) ssidEl.textContent = data.ssid || '--';
         const age = data.updated_at ? Math.round(Date.now() / 1000 - data.updated_at) : null;
+        const newSsid = String(data.ssid || '').trim();
+        const connectedFlag = (data.connected === true)
+          || (data.connected == null && !!newSsid && age !== null && age < 45);
+        const freshData = age !== null && age < 30;
+        const recentPing = age !== null && age < 60;
         let bannerState = 'offline';
         if (freshEl) {
-          if (age !== null && age < 30) {
+          if (connectedFlag && freshData) {
             freshEl.textContent = 'online';
             freshEl.style.color = '#047857';
             bannerState = 'online';
-          } else if (age !== null && age < 120) {
+          } else if (connectedFlag && age !== null && age < 120) {
             freshEl.textContent = `${age}s atras`;
             freshEl.style.color = '#92400e';
             bannerState = 'stale';
+          } else if (age !== null && age < 120) {
+            freshEl.textContent = 'desconectado';
+            freshEl.style.color = '#b91c1c';
+            bannerState = 'offline';
           } else {
             freshEl.textContent = data.ip ? 'stale' : 'sem dados';
             freshEl.style.color = '#475569';
@@ -2195,15 +2480,14 @@
           banner.classList.remove('online', 'stale', 'offline');
           banner.classList.add(bannerState);
         }
-        const newSsid = String(data.ssid || '').trim();
         if (newSsid !== _lastEspSsid) {
           _lastEspSsid = newSsid;
           updateActiveBadge();
         }
         updateNetReason(newSsid);
-        const hasWifi = !!newSsid;
-        const serverOk = age !== null && age < 120;
-        const dataOk = age !== null && age < 30;
+        const hasWifi = connectedFlag && !!newSsid && recentPing;
+        const serverOk = connectedFlag && recentPing;
+        const dataOk = connectedFlag && freshData;
         updateNetDiagnostics(hasWifi, serverOk, dataOk);
       } catch (e) {
         updateNetDiagnostics(null, null, null);
@@ -2286,13 +2570,19 @@
       renderNetworkCards();
       setNetworkStatus('Preencha as redes e clique em "Aplicar no ESP32".');
       fetchDeviceStatus();
-      setInterval(fetchDeviceStatus, 10000);
+      if (deviceStatusInterval) clearInterval(deviceStatusInterval);
+      deviceStatusInterval = setInterval(fetchDeviceStatus, 10000);
     }
 
     // --- Timer ---
     let timerInterval, startTime, elapsedTime = 0, isRunning = false;
 
+    function hasTimerUi() {
+      return !!document.getElementById('timer');
+    }
+
     function startTimer() {
+      if (!hasTimerUi()) return;
       if (isRunning) return;
       isRunning = true;
       startTime = Date.now() - elapsedTime;
@@ -2317,6 +2607,7 @@
       const minutes = Math.floor(diff / 60).toString().padStart(2, '0');
       const seconds = (diff % 60).toString().padStart(2, '0');
       const display = document.getElementById('timer');
+      if (!display) return;
       display.innerText = `${minutes}:${seconds}`;
       const targetSeconds = Math.max(60, selectedTrainMinutes * 60);
       display.classList.toggle('exceeded', diff >= targetSeconds);
@@ -2660,6 +2951,7 @@
       if (resumeBtn) resumeBtn.disabled = ingestEnabled;
       const note = document.getElementById('ingestNote');
       if (note) note.style.display = ingestEnabled ? 'none' : 'block';
+      updateMonitorTag();
     }
 
     function updateLastDbInfo() {
@@ -2908,7 +3200,13 @@
       try {
         const res = await fetch(buildApiUrl(CONTROL_API_BASE), { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } });
         const data = await res.json();
-        if (data.mode) { currentMode = data.mode; updateModeBadge(currentMode); }
+        if (data.mode) {
+          currentMode = data.mode;
+          updateModeBadge(currentMode);
+          if (String(currentMode).toUpperCase() !== 'PAUSE') {
+            monitorOrigin = autoInterval ? monitorOrigin : 'manual_collect';
+          }
+        }
         if (typeof data.ingest_enabled === 'boolean') {
           ingestEnabled = data.ingest_enabled;
           updateIngestUI();
@@ -2958,6 +3256,8 @@
         };
         lastRuntime = syntheticRuntime;
         updateRuntimeInfoControl(syntheticRuntime);
+        refreshExportStatus({ silent: true });
+        updateMonitorTag();
       } catch (e) { /* silent */ }
     }
 
@@ -2980,6 +3280,9 @@
         const data = await res.json();
         currentMode = data.mode || mode;
         updateModeBadge(currentMode);
+        if (String(currentMode).toUpperCase() !== 'PAUSE') {
+          monitorOrigin = autoInterval ? monitorOrigin : 'manual_collect';
+        }
         if (typeof data.ingest_enabled === 'boolean') {
           ingestEnabled = data.ingest_enabled;
           updateIngestUI();
@@ -2992,6 +3295,8 @@
           controlChannel.postMessage({ type: 'COLLECTION_CHANGE', collection_id: data.collection_id });
         }
         controlChannel.postMessage({ type: 'MODE_CHANGE', newMode: currentMode });
+        refreshExportStatus({ silent: true });
+        updateMonitorTag();
       } catch (e) {
         alert('Erro ao comunicar com servidor');
         updateModeBadge('ERRO');
@@ -3036,43 +3341,192 @@
       const desc = prompt('Descricao opcional da coleta (ou deixe vazio):', '');
 
       try {
+        const payload = { new_collection: true };
+        if (desc && desc.trim()) payload.collection_description = desc.trim();
+
         const res = await fetch(buildApiUrl(CONTROL_API_BASE), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
-          body: JSON.stringify(withDevicePayload({ new_collection: true }))
+          body: JSON.stringify(withDevicePayload(payload))
         });
         const data = await res.json();
         if (typeof data.ingest_enabled === 'boolean') {
           ingestEnabled = data.ingest_enabled;
           updateIngestUI();
         }
-        let collectionId = data.collection_id || 'v5_stream';
-
-        // Adicionar descricao se fornecida
-        if (desc && desc.trim()) {
-          collectionId = `${collectionId}_${desc.replace(/\s+/g, '_').substring(0, 40)}`;
-          await fetch(buildApiUrl(CONTROL_API_BASE), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
-            body: JSON.stringify(withDevicePayload({ collection_id: collectionId }))
-          });
-        }
+        const collectionId = data.collection_id || 'v5_stream';
 
         document.getElementById('currentCollectionId').innerText = collectionId;
         updateCollectionMeta({ ...data, collection_id: collectionId });
         controlChannel.postMessage({ type: 'COLLECTION_CHANGE', collection_id: collectionId });
+        rememberLastExportedCollection(null);
+        monitorOrigin = 'manual_collect';
+        updateMonitorTag();
         resetValidation();
+        await refreshExportStatus({ force: true, silent: true });
       } catch (e) { alert('Erro ao definir nova coleta'); }
     }
 
-    async function resetDatabase() {
-      if (!confirm("Tem certeza? Isso apagara TODOS os dados!")) return;
+    async function exportToCSV(options = {}) {
+      const silent = !!options?.silent;
+      const collectionId = document.getElementById('currentCollectionId')?.innerText?.trim();
+      if (!collectionId || collectionId === '--' || collectionId === 'v5_stream') {
+        const msg = 'Nenhuma coleta identificada para exportar.\nInicie uma nova coleta primeiro.';
+        if (!silent) {
+          alert(msg);
+          return null;
+        }
+        throw new Error(msg);
+      }
+      const btn = document.getElementById('btnExportCsv');
+      btn.disabled = true;
+      btn.innerText = 'Exportando...';
       try {
-        const res = await fetch(buildApiUrl('../api/reset_db'), { method: 'POST', headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } });
+        const res = await fetch(buildApiUrl('../api/export_csv'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body: JSON.stringify(withDevicePayload({ collection_id: collectionId })),
+        });
         const data = await res.json();
-        alert(data.message);
+        const detailMsg = (typeof data?.detail === 'string')
+          ? data.detail
+          : (typeof data?.detail?.message === 'string' ? data.detail.message : null);
+        if (!res.ok) throw new Error(detailMsg || 'Erro desconhecido');
+        rememberLastExportedCollection(collectionId);
+        await refreshExportStatus({ force: true, silent: true });
+        btn.innerText = 'CSV Exportado ✓';
+        if (!silent) {
+          alert(
+            `CSV exportado com sucesso!\n` +
+            `Arquivo: ${data.filename}\n` +
+            `Linhas: ${Number(data.rows || 0).toLocaleString()}\n` +
+            `Manifesto: ${data.export_id || '--'}\n` +
+            `Local: notebooks/output/data/`
+          );
+        }
+        return data;
+      } catch (e) {
+        btn.innerText = 'Exportar CSV';
+        if (!silent) {
+          alert(`Erro ao exportar CSV:\n${e.message}`);
+          return null;
+        }
+        throw e;
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => {
+          if (btn.innerText === 'CSV Exportado ✓') btn.innerText = 'Exportar CSV';
+        }, 5000);
+      }
+    }
+
+    async function exportDatabaseZip() {
+      const btn = document.getElementById('btnExportZip');
+      const cid = document.getElementById('currentCollectionId')?.innerText?.trim();
+
+      let mode = 'all';
+      let collectionId = null;
+      if (cid && cid !== '--' && cid !== 'v5_stream') {
+        const onlyCurrent = confirm(
+          `Exportar ZIP somente da coleta atual "${cid}"?\n\n` +
+          `OK = somente esta coleta\n` +
+          `Cancelar = exportar todo o banco`
+        );
+        mode = onlyCurrent ? 'current' : 'all';
+        if (onlyCurrent) collectionId = cid;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Compactando...';
+      }
+
+      try {
+        const payload = withDevicePayload({
+          mode,
+          collection_id: collectionId,
+          split_by_collection: mode === 'all',
+        });
+        const res = await fetch(buildApiUrl('../api/export_db_zip'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        const detailMsg = (typeof data?.detail === 'string')
+          ? data.detail
+          : (typeof data?.detail?.message === 'string' ? data.detail.message : null);
+        if (!res.ok) throw new Error(detailMsg || 'Falha ao exportar ZIP');
+
+        alert(
+          `ZIP exportado com sucesso!\n` +
+          `Arquivo: ${data.filename || '--'}\n` +
+          `Linhas: ${Number(data.rows || 0).toLocaleString()}\n` +
+          `CSV(s): ${Number(data.csv_entries || 0).toLocaleString()}\n` +
+          `Local: notebooks/output/data/\n\n` +
+          `Obs: para apontar automaticamente o notebook 01_EDA, use "Exportar CSV" da coleta atual.`
+        );
+      } catch (e) {
+        alert(`Erro ao exportar ZIP:\n${e.message || e}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Exportar Banco ZIP';
+        }
+      }
+    }
+
+    async function resetDatabase(force = false) {
+      await refreshExportStatus({ force: true, silent: true });
+      const cid = document.getElementById('currentCollectionId')?.innerText?.trim();
+      const statusCurrent = String(lastExportStatus?.current_collection || '').trim();
+      const statusExported = (statusCurrent && statusCurrent === cid)
+        ? !!lastExportStatus?.current_collection_exported
+        : (cid === lastExportedCollection);
+      const hasUnsaved = cid && cid !== '--' && cid !== 'v5_stream' && !statusExported;
+      if (!force) {
+        const msg = hasUnsaved
+          ? `AVISO: A coleta "${cid}" ainda NAO foi exportada para CSV!\n\nUse "Exportar CSV" antes de apagar.\n\nDeseja continuar e APAGAR TODOS os dados mesmo assim?`
+          : 'Tem certeza? Isso apagara TODOS os dados!';
+        if (!confirm(msg)) return;
+      }
+      try {
+        const res = await fetch(buildApiUrl('../api/reset_db'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_TOKEN}` },
+          body: JSON.stringify(withDevicePayload({ force }))
+        });
+        const data = await res.json();
+        if (res.status === 409 && !force) {
+          const detail = (data && typeof data.detail === 'object') ? data.detail : {};
+          const pending = Array.isArray(detail.pending_collections) ? detail.pending_collections : [];
+          const preview = pending.slice(0, 6).map(item =>
+            `- ${item.collection_id} (${Number(item.rows || 0).toLocaleString()} linhas)`
+          ).join('\n');
+          const suffix = pending.length > 6 ? `\n... e mais ${pending.length - 6} colecao(oes).` : '';
+          const forceMsg =
+            `Reset bloqueado pelo servidor.\n` +
+            `Existem colecoes sem exportacao registrada.\n\n` +
+            `${preview || '- Colecoes pendentes nao informadas.'}${suffix}\n\n` +
+            `Deseja FORCAR o reset mesmo assim?`;
+          if (confirm(forceMsg)) {
+            await resetDatabase(true);
+          }
+          return;
+        }
+        const detailMsg = (typeof data?.detail === 'string')
+          ? data.detail
+          : (typeof data?.detail?.message === 'string' ? data.detail.message : null);
+        if (!res.ok) throw new Error(detailMsg || 'Falha ao resetar banco');
+        rememberLastExportedCollection(null);
+        monitorOrigin = 'idle';
+        updateMonitorTag();
+        await refreshExportStatus({ force: true, silent: true });
+        alert(data.message || 'Banco resetado com sucesso.');
         resetValidation();
-      } catch (e) { alert('Erro ao resetar banco'); }
+      } catch (e) {
+        alert(`Erro ao resetar banco:\n${e.message || e}`);
+      }
     }
 
     async function fixCollectionForRate() {
@@ -3099,7 +3553,9 @@
           controlChannel.postMessage({ type: 'COLLECTION_CHANGE', collection_id: data.collection_id });
         }
         updateCollectionMeta(data);
+        rememberLastExportedCollection(null);
         resetValidation();
+        await refreshExportStatus({ force: true, silent: true });
       } catch (e) {
         alert('Erro ao criar nova sessao');
       }
@@ -3150,6 +3606,8 @@
 
         controlChannel.postMessage({ type: 'MODE_CHANGE', newMode: currentMode });
         controlChannel.postMessage({ type: 'INGEST_CHANGE', ingest_enabled: ingestEnabled });
+        refreshExportStatus({ silent: true });
+        updateMonitorTag();
       } catch (e) {
         alert('Erro ao pausar gravacao');
         updateModeBadge('ERRO');
@@ -3180,6 +3638,9 @@
         const data = await res.json();
         currentMode = data.mode || modeToRestore;
         updateModeBadge(currentMode);
+        if (String(currentMode).toUpperCase() !== 'PAUSE') {
+          monitorOrigin = autoInterval ? monitorOrigin : 'manual_collect';
+        }
         rememberLastNonPauseMode(currentMode);
 
         if (typeof data.ingest_enabled === 'boolean') {
@@ -3206,6 +3667,8 @@
 
         controlChannel.postMessage({ type: 'MODE_CHANGE', newMode: currentMode });
         controlChannel.postMessage({ type: 'INGEST_CHANGE', ingest_enabled: ingestEnabled });
+        refreshExportStatus({ silent: true });
+        updateMonitorTag();
       } catch (e) {
         alert('Erro ao retomar gravacao');
         updateModeBadge('ERRO');
@@ -3644,6 +4107,8 @@
       autoStartTime = Date.now();
       document.getElementById('btnStopAuto').disabled = false;
       document.getElementById('autoStatus').innerText = 'Inicializando automacao...';
+      monitorOrigin = 'auto_running';
+      updateMonitorTag();
       await applyAutoPhase(autoPhases[0]);
       beep();
       autoInterval = setInterval(autoTick, 1000);
@@ -3657,6 +4122,10 @@
       document.getElementById('btnStopAuto').disabled = true;
       document.getElementById('autoStatus').innerText = 'Automacao parada';
       document.getElementById('autoProgressBar').style.width = '0%';
+      if (monitorOrigin === 'auto_running') {
+        monitorOrigin = 'idle';
+      }
+      updateMonitorTag();
     }
 
     async function autoTick() {
@@ -3670,11 +4139,20 @@
         cumulative += autoPhases[i].duration;
         if (i === autoPhases.length - 1) {
           stopAutomation(); beep();
-          document.getElementById('autoStatus').innerText = 'Automacao concluida!';
           document.getElementById('autoProgressBar').style.width = '100%';
           activeTrainingClassKey = null;
           updateTrainingClassPreview();
           await setMode('PAUSE', { labelSource: 'AUTO', transitionMarker: 0 });
+          document.getElementById('autoStatus').innerText = 'Automacao concluida! Exportando CSV...';
+          try {
+            await exportToCSV({ silent: true });
+          } catch (e) {
+            document.getElementById('autoStatus').innerText = `Automacao concluida, mas falhou ao exportar CSV: ${e.message || e}`;
+            return;
+          }
+          monitorOrigin = 'auto_finished';
+          updateMonitorTag();
+          document.getElementById('autoStatus').innerText = 'Automacao concluida! Use o notebook 01_EDA para analise.';
           return;
         }
       }
@@ -3695,16 +4173,19 @@
 
     // --- Init ---
     setActiveDeviceId(DEVICE_ID);
+    lastExportedCollection = loadLastExportedCollection();
     initNetworkManager();
     selectTrainTime(selectedTrainMinutes);
     syncLabelStateFromPayload({}, { mode: currentMode });
     syncControlState();
+    refreshExportStatus({ force: true, silent: true });
     setInterval(syncControlState, 4000);
     setInterval(updateHzMonitor, 2000);
     setInterval(updateTrainingStats, 5000);
     updateHzMonitor();
     updateTrainingStats();
     updateIngestUI();
+    updateMonitorTag();
   </script>
 </body>
 
