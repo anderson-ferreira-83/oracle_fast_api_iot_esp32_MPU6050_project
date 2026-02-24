@@ -1,8 +1,8 @@
 {
-  "mode": "PAUSE",
+  "mode": "HIGH",
   "sample_rate": 100,
-  "ingest_enabled": false,
-  "cmd_speed_label": "OFF",
+  "ingest_enabled": true,
+  "cmd_speed_label": "HIGH",
   "rot_state_label": "STOPPED",
   "use_state_label": "NO_LOAD",
   "vib_profile_label": "NATURAL",
