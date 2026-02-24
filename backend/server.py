@@ -1844,13 +1844,26 @@ def get_data(request: Request):
 
     with db_conn() as conn:
         tcol = ts_column(conn)
-        cols = table_columns(conn, "sensor_data")
+        # Resolve effective table based on data_purpose do estado atual do dispositivo
+        # MONITORING → sensor_monitoring_data (dados ao vivo); TRAINING → sensor_training_data
+        _data_purpose = (config or {}).get("data_purpose", "MONITORING")
+        if _data_purpose == "MONITORING" and table_columns(conn, MONITORING_TABLE):
+            eff_table = MONITORING_TABLE
+        elif _data_purpose == "TRAINING" and table_columns(conn, TRAINING_TABLE):
+            eff_table = TRAINING_TABLE
+        elif table_columns(conn, MONITORING_TABLE):
+            eff_table = MONITORING_TABLE
+        elif table_columns(conn, TRAINING_TABLE):
+            eff_table = TRAINING_TABLE
+        else:
+            eff_table = "sensor_data"
+        cols = table_columns(conn, eff_table)
 
         def has_col(c: str) -> bool:
             return c.lower() in cols
 
         if mode == "latest":
-            sql = "SELECT * FROM sensor_data"
+            sql = f"SELECT * FROM {eff_table}"
             params: Dict[str, Any] = {}
             if device_id:
                 sql += " WHERE device_id = :device_id"
@@ -1873,8 +1886,8 @@ def get_data(request: Request):
             if device_id:
                 where = " WHERE device_id = :device_id"
                 params["device_id"] = device_id
-            total_row = fetch_one(conn, f"SELECT COUNT(*) as total FROM sensor_data{where}", params) or {"total": 0}
-            latest = norm_row(fetch_one(conn, f"SELECT * FROM sensor_data{where} ORDER BY id DESC FETCH FIRST 1 ROWS ONLY", params))
+            total_row = fetch_one(conn, f"SELECT COUNT(*) as total FROM {eff_table}{where}", params) or {"total": 0}
+            latest = norm_row(fetch_one(conn, f"SELECT * FROM {eff_table}{where} ORDER BY id DESC FETCH FIRST 1 ROWS ONLY", params))
             latest_ts = float(latest.get("timestamp")) if latest and isinstance(latest.get("timestamp"), (int, float)) else 0.0
             age = microtime() - latest_ts if latest_ts > 0 else None
             diagnosis = (
@@ -1902,7 +1915,7 @@ def get_data(request: Request):
         if mode == "history":
             seconds = int(request.query_params.get("seconds", "30"))
             params: Dict[str, Any] = {"start_ts": microtime() - seconds}
-            sql = f"SELECT * FROM sensor_data WHERE {tcol} >= :start_ts"
+            sql = f"SELECT * FROM {eff_table} WHERE {tcol} >= :start_ts"
             if device_id:
                 sql += " AND device_id = :device_id"
                 params["device_id"] = device_id
