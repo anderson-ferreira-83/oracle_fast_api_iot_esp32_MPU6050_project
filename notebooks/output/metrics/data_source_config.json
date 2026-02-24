@@ -1,7 +1,7 @@
 {
-  "data_source": "AUTO",
-  "resolved_source": "SQL",
-  "resolution_reason": "sql_live",
-  "csv_file": null,
-  "updated_at": "20260223_183836"
+  "data_source": "CSV",
+  "resolved_source": "CSV",
+  "resolution_reason": "csv_selected:raw_sensor_data_20260223_212518.csv",
+  "csv_file": "raw_sensor_data_20260223_212518.csv",
+  "updated_at": "20260223_212557"
 }

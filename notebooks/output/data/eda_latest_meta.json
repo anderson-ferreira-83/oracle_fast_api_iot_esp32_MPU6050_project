@@ -1,9 +1,9 @@
 {
-  "eda_id": "eda_20260223_183851",
-  "collection_id": "col_20260223_175840_100hz",
-  "eda_timestamp": "20260223_184211",
-  "filtered_csv": "output\\data\\raw_sensor_data_filtered_20260223_184211.csv",
-  "rows": 225613,
+  "eda_id": "eda_20260223_212630",
+  "collection_id": "col_20260223_204702_100hz",
+  "eda_timestamp": "20260223_213147",
+  "filtered_csv": "output\\data\\raw_sensor_data_filtered_20260223_213147.csv",
+  "rows": 210678,
   "sample_hz": 100.0,
   "active_classes": [
     "LOW_ROT_ON",
@@ -13,5 +13,9 @@
     "MEDIUM_ROT_OFF",
     "HIGH_ROT_OFF",
     "FAN_OFF"
-  ]
+  ],
+  "data_source": "CSV",
+  "source_table": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260223_212518.csv",
+  "export_id": "exp_20260223_212518_col_20260223_204702_100hz",
+  "raw_source_path": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260223_212518.csv"
 }

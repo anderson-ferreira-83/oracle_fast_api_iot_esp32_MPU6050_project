@@ -1,0 +1,52 @@
+{
+  "generated_at": "20260223_214140",
+  "eda_id": "eda_20260223_212630",
+  "fe_id": "fe_20260223_214140",
+  "eda_source": {
+    "eda_id": "eda_20260223_212630",
+    "collection_id": "col_20260223_204702_100hz",
+    "eda_timestamp": "20260223_213147",
+    "filtered_csv": "output\\data\\raw_sensor_data_filtered_20260223_213147.csv",
+    "rows": 210678,
+    "sample_hz": 100.0,
+    "active_classes": [
+      "LOW_ROT_ON",
+      "MEDIUM_ROT_ON",
+      "HIGH_ROT_ON",
+      "LOW_ROT_OFF",
+      "MEDIUM_ROT_OFF",
+      "HIGH_ROT_OFF",
+      "FAN_OFF"
+    ],
+    "data_source": "CSV",
+    "source_table": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260223_212518.csv",
+    "export_id": "exp_20260223_212518_col_20260223_204702_100hz",
+    "raw_source_path": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260223_212518.csv"
+  },
+  "feature_config_version": "5.18",
+  "raw_csv_path": null,
+  "features_csv_path": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\features_extracted_20260223_214140.csv",
+  "features_latest_path": "c:\\xampp\\htdocs\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\features_latest.csv",
+  "features_csv_hash": "2c60fd3138b4a6f8bc9ceaa2d4211a118cccf4587b3468b329ad6c2c7dffc32e",
+  "window_size": 100,
+  "step_size": 20,
+  "sample_rate_hz": 100.0,
+  "selected_features": [
+    "gyro_y_dps_std",
+    "gyro_y_dps_sp_p1",
+    "accel_y_g_fft_high",
+    "gyro_y_dps_fft_high",
+    "accel_x_g_std",
+    "gyro_y_dps_fft_mid",
+    "gyro_y_dps_p10",
+    "gyro_y_dps_sp_p2",
+    "gyro_y_dps_range",
+    "gyro_y_dps_sp_p6",
+    "accel_z_g_fft_high",
+    "vibration_dps_p95",
+    "gyro_y_dps_p90",
+    "gyro_z_dps_sp_p13",
+    "accel_mag_g_fft_low",
+    "gyro_x_dps_range"
+  ]
+}
