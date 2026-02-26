@@ -1,4 +1,4 @@
-﻿# boot_portal.py - on-demand Wi-Fi/server config portal for ESP32
+# boot_portal.py - on-demand Wi-Fi/server config portal for ESP32
 
 import time
 
