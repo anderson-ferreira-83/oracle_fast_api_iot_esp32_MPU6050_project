@@ -15,19 +15,18 @@
     {
       "ssid": "S20_Ders@0",
       "password": "F0xbam1844",
-      "server_ip": "10.125.237.165:8000"
+      "server_ip": "10.125.237.250:8000"
     },
     {
       "ssid": "Dersao83",
       "password": "986960440",
-      "server_ip": "192.168.0.105:8000"
+      "server_ip": "10.125.237.250:8000"
     }
   ],
   "server_hostname": "",
-  "server_fallback_ip": "10.125.237.165:8000",
+  "server_fallback_ip": "10.125.237.250:8000",
   "server_fallback_ips": [
-    "10.125.237.165:8000",
-    "192.168.0.105:8000"
+    "10.125.237.250:8000"
   ],
   "api_path": "/api/ingest",
   "collection_id": "col_20260223_204702_100hz",

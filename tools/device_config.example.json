@@ -3,11 +3,10 @@
   "password": "SUA_SENHA_WIFI",
   "wifi_profile_file": "/wifi_profiles.json",
   "network_revision_file": "/last_network_revision.txt",
-  "server_hostname": "SEU-PC.local",
-  "server_fallback_ip": "192.168.0.108",
+  "server_hostname": "",
+  "server_fallback_ip": "192.168.0.250:8000",
   "server_fallback_ips": [
-    "192.168.0.105",
-    "192.168.137.10"
+    "192.168.0.250:8000"
   ],
   "api_path": "/api/ingest",
   "mdns_retry_interval_s": 30,
@@ -46,12 +45,12 @@
     {
       "ssid": "SEU_HOTSPOT_CELULAR",
       "password": "SENHA_HOTSPOT",
-      "server_ip": "192.168.43.100"
+      "server_ip": "192.168.0.250:8000"
     },
     {
       "ssid": "SEU_WIFI_PADRAO",
       "password": "SUA_SENHA_WIFI",
-      "server_ip": "192.168.0.108"
+      "server_ip": "192.168.0.250:8000"
     }
   ],
   "debug": true
