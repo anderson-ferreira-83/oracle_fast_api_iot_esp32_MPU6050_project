@@ -61,3 +61,14 @@
 2026-02-27T20:16:05Z INF Retrying connection in up to 4s connIndex=0 event=0 ip=198.41.200.193
 2026-02-27T20:16:08Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.200.113
 2026-02-27T20:16:09Z INF Registered tunnel connection connIndex=0 connection=ef130e07-15cb-40d9-acf5-618d18ed0adb event=0 ip=198.41.200.113 location=gru21 protocol=quic
+2026-02-27T21:00:01Z ERR failed to run the datagram handler error="timeout: no recent network activity" connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:01Z ERR failed to accept incoming stream requests error="failed to accept QUIC stream: timeout: no recent network activity" connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:01Z ERR failed to serve tunnel connection error="datagram manager encountered a failure while serving" connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:01Z ERR Serve tunnel error error="datagram manager encountered a failure while serving" connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:01Z INF Retrying connection in up to 1s connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:02Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:04Z ERR Failed to refresh DNS local resolver error="lookup region1.v2.argotunnel.com: i/o timeout"
+2026-02-27T21:00:07Z ERR Failed to dial a quic connection error="failed to dial to edge with quic: timeout: no recent network activity" connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:07Z INF Retrying connection in up to 4s connIndex=0 event=0 ip=198.41.200.113
+2026-02-27T21:00:11Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.200.53
+2026-02-27T21:00:12Z INF Registered tunnel connection connIndex=0 connection=39bb3f50-acd1-4c93-a862-3e7b03d8436a event=0 ip=198.41.200.53 location=gru02 protocol=quic

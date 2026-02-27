@@ -115,7 +115,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="USB serial (ESP32) to backend /api/ingest bridge")
     p.add_argument("--port", default="", help="Porta serial (ex.: COM7). Vazio = auto-detect")
     p.add_argument("--baudrate", type=int, default=115200, help="Baudrate serial")
-    p.add_argument("--read-timeout", type=float, default=0.25, help="Timeout de leitura serial em segundos")
+    p.add_argument("--read-timeout", type=float, default=0.15, help="Timeout de leitura serial em segundos")
     p.add_argument("--backend-url", default="http://127.0.0.1:8000/api/ingest", help="URL local do backend ingest")
     p.add_argument("--auth-token", default=os.getenv("API_AUTH_TOKEN", DEFAULT_TOKEN), help="Bearer token")
     p.add_argument("--device-hint", default="ESP32", help="Texto para ajudar no auto-detect da porta")
@@ -139,8 +139,11 @@ def main() -> int:
     rx_json_fail = 0
     post_ok = 0
     post_fail = 0
+    rx_samples_ok = 0
     last_stat = time.time()
     last_not_found_log = 0.0
+
+    rx_buf = bytearray()
 
     while True:
         try:
@@ -168,77 +171,99 @@ def main() -> int:
                     ser.reset_output_buffer()
                 except Exception:
                     pass
+                rx_buf = bytearray()
                 print("[USB] Conectado. Aguardando lotes JSON...")
 
-            raw = ser.readline()
+            raw = ser.read(4096)
             if not raw:
                 now = time.time()
                 if now - last_stat >= 10:
                     print(
-                        "[STAT] PORT:{} RX_OK:{} RX_JSON_FAIL:{} POST_OK:{} POST_FAIL:{}".format(
+                        "[STAT] PORT:{} RX_OK:{} RX_JSON_FAIL:{} POST_OK:{} POST_FAIL:{} HZ:{:.1f}".format(
                             current_port,
                             rx_ok,
                             rx_json_fail,
                             post_ok,
                             post_fail,
+                            rx_samples_ok / 10.0,
                         )
                     )
+                    rx_samples_ok = 0
                     last_stat = now
                 continue
 
-            line = raw.decode("utf-8", errors="ignore").strip()
-            if not line:
-                continue
-            if not line.startswith("{"):
-                continue
+            rx_buf.extend(raw)
+            if len(rx_buf) > 524288:
+                # Protege contra crescimento indefinido caso quebras de linha se percam.
+                rx_buf = rx_buf[-262144:]
 
-            try:
-                payload = json.loads(line)
-            except Exception:
-                rx_json_fail += 1
-                if rx_json_fail <= 3 or (rx_json_fail % 20) == 0:
-                    print("[USB] JSON invalido: {}".format(line[:120]))
-                continue
+            while True:
+                idx = rx_buf.find(b"\n")
+                if idx < 0:
+                    break
+                line_bytes = bytes(rx_buf[:idx])
+                del rx_buf[: idx + 1]
 
-            if not isinstance(payload, dict):
-                continue
+                line = line_bytes.decode("utf-8", errors="ignore").strip()
+                if not line:
+                    continue
+                if not line.startswith("{"):
+                    continue
 
-            msg_type = str(payload.get("type", "")).strip().lower()
-            if msg_type == "hello":
-                print("[USB] HELLO recebido de {}".format(payload.get("device_id", "ESP32")))
-                continue
-            if msg_type != "batch" or "batch" not in payload:
-                continue
+                try:
+                    payload = json.loads(line)
+                except Exception:
+                    rx_json_fail += 1
+                    if rx_json_fail <= 3 or (rx_json_fail % 20) == 0:
+                        print("[USB] JSON invalido: {}".format(line[:120]))
+                    continue
 
-            net = payload.get("net")
-            if not isinstance(net, dict):
-                net = {}
-            net["connection_type"] = "USB"
-            net["ssid"] = "USB"
-            net["connected"] = True
-            payload["net"] = net
+                if not isinstance(payload, dict):
+                    continue
 
-            rx_ok += 1
-            ok, status, err = post_json(args.backend_url, payload, args.auth_token, timeout=args.post_timeout)
-            if ok:
-                post_ok += 1
-            else:
-                post_fail += 1
-                if post_fail <= 3 or (post_fail % 10) == 0:
-                    print("[POST] fail status={} err={}".format(status, err))
+                msg_type = str(payload.get("type", "")).strip().lower()
+                if msg_type == "hello":
+                    print("[USB] HELLO recebido de {}".format(payload.get("device_id", "ESP32")))
+                    continue
+                if msg_type != "batch" or "batch" not in payload:
+                    continue
 
-            now = time.time()
-            if now - last_stat >= 10:
-                print(
-                    "[STAT] PORT:{} RX_OK:{} RX_JSON_FAIL:{} POST_OK:{} POST_FAIL:{}".format(
-                        current_port,
-                        rx_ok,
-                        rx_json_fail,
-                        post_ok,
-                        post_fail,
+                net = payload.get("net")
+                if not isinstance(net, dict):
+                    net = {}
+                net["connection_type"] = "USB"
+                net["ssid"] = "USB"
+                net["connected"] = True
+                payload["net"] = net
+
+                rx_ok += 1
+                try:
+                    rx_samples_ok += len(payload.get("batch", []))
+                except Exception:
+                    pass
+                ok, status, err = post_json(args.backend_url, payload, args.auth_token, timeout=args.post_timeout)
+                if ok:
+                    post_ok += 1
+                else:
+                    post_fail += 1
+                    if post_fail <= 3 or (post_fail % 10) == 0:
+                        print("[POST] fail status={} err={}".format(status, err))
+
+                now = time.time()
+                if now - last_stat >= 10:
+                    eff_hz = rx_samples_ok / 10.0
+                    print(
+                        "[STAT] PORT:{} RX_OK:{} RX_JSON_FAIL:{} POST_OK:{} POST_FAIL:{} HZ:{:.1f}".format(
+                            current_port,
+                            rx_ok,
+                            rx_json_fail,
+                            post_ok,
+                            post_fail,
+                            eff_hz,
+                        )
                     )
-                )
-                last_stat = now
+                    rx_samples_ok = 0
+                    last_stat = now
 
         except KeyboardInterrupt:
             print("\nEncerrado pelo usuario.")

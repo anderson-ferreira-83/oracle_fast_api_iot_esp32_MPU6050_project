@@ -1658,8 +1658,8 @@ async def ingest(request: Request, authorization: Optional[str] = Header(default
                 gx = item.get("gx", item.get("gyro_x_dps", 0))
                 gy = item.get("gy", item.get("gyro_y_dps", 0))
                 gz = item.get("gz", item.get("gyro_z_dps", 0))
-                fan_state = item.get("fs", item.get("fan_state", "RAW"))
-                item_rate = item.get("sr", item.get("sample_rate", 10))
+                fan_state = item.get("fs", item.get("fan_state", data.get("fan_state", "RAW")))
+                item_rate = item.get("sr", item.get("sample_rate", data.get("sample_rate", 10)))
 
                 cmd_fallback = cmd_speed_from_mode(fan_state)
                 cmd_speed_label = sanitize_enum(item.get("cmd_speed_label", data.get("cmd_speed_label", control_state.get("cmd_speed_label", cmd_fallback))), {"OFF", "LOW", "MEDIUM", "HIGH", "UNKNOWN"}, cmd_fallback)

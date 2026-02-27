@@ -67,7 +67,7 @@ def _read_mpu(i2c, sample_rate, fan_state):
     gy = _bytes_to_int(raw[10], raw[11]) / 131.0
     gz = _bytes_to_int(raw[12], raw[13]) / 131.0
     return {
-        "ts": _ts(),
+        "ts": round(_ts(), 3),
         "t": round(temp, 1),
         "ax": round(ax, 4),
         "ay": round(ay, 4),
@@ -75,8 +75,6 @@ def _read_mpu(i2c, sample_rate, fan_state):
         "gx": round(gx, 2),
         "gy": round(gy, 2),
         "gz": round(gz, 2),
-        "sr": sample_rate,
-        "fs": fan_state,
     }
 
 
@@ -96,7 +94,7 @@ def main():
     if sample_rate > MAX_SAMPLE_RATE:
         sample_rate = MAX_SAMPLE_RATE
 
-    sends_per_sec = _cfg_int(cfg.get("target_sends_per_sec", 10), 10)
+    sends_per_sec = _cfg_int(cfg.get("target_sends_per_sec", 2), 2)
     if sends_per_sec < 1:
         sends_per_sec = 1
     if sends_per_sec > 25:
@@ -105,7 +103,7 @@ def main():
     batch_size = sample_rate // sends_per_sec
     if batch_size < 1:
         batch_size = 1
-    usb_max_batch_size = _cfg_int(cfg.get("usb_max_batch_size", 20), 20)
+    usb_max_batch_size = _cfg_int(cfg.get("usb_max_batch_size", 50), 50)
     if usb_max_batch_size < 1:
         usb_max_batch_size = 1
     if batch_size > usb_max_batch_size:
@@ -114,13 +112,22 @@ def main():
     period_ms = int(1000 / sample_rate)
     if period_ms < 1:
         period_ms = 1
+    usb_baudrate = _cfg_int(cfg.get("usb_baudrate", 115200), 115200)
+    if usb_baudrate < 9600:
+        usb_baudrate = 115200
 
     low_mem_threshold = _cfg_int(cfg.get("low_mem_threshold", 14000), 14000)
+
+    # Aumenta throughput serial para sustentar 100 Hz com lotes JSON.
+    try:
+        machine.UART(0, baudrate=usb_baudrate)
+    except Exception:
+        usb_baudrate = 115200
 
     print("=" * 40)
     print("ESP32 MPU6050 v7.4-usb")
     print("Device: {}".format(device_id))
-    print("Rate: {} Hz | Batch: {}".format(sample_rate, batch_size))
+    print("Rate: {} Hz | Batch: {} | Baud: {}".format(sample_rate, batch_size, usb_baudrate))
     print("=" * 40)
 
     i2c = machine.I2C(0, scl=machine.Pin(22), sda=machine.Pin(21))
@@ -134,8 +141,9 @@ def main():
         "auth_token": token,
         "sample_rate": sample_rate,
         "batch_size": batch_size,
+        "fan_state": fan_state,
     }
-    _safe_write_line(json.dumps(hello))
+    _safe_write_line(json.dumps(hello, separators=(",", ":")))
 
     sent_ok = 0
     sent_fail = 0
@@ -170,6 +178,7 @@ def main():
             "device_id": device_id,
             "collection_id": collection_id,
             "sample_rate": sample_rate,
+            "fan_state": fan_state,
             "batch": sample_buffer,
             "net": {
                 "connected": True,
@@ -181,7 +190,7 @@ def main():
         }
 
         try:
-            line = json.dumps(payload_obj)
+            line = json.dumps(payload_obj, separators=(",", ":"))
             ok = _safe_write_line(line)
         except Exception:
             ok = False
