@@ -776,3 +776,19 @@ Invoke-RestMethod "http://localhost:8000/api/get_data?mode=latest"
 # 5. Verificar IP do PC (para configurar o ESP32)
 ipconfig | findstr "IPv4"
 ```
+
+---
+
+## 14. Cloudflare Tunnel
+
+Para publicar o backend local na internet sem abrir portas no roteador:
+- Guia completo: `docs/GUIA_CLOUDFLARE_TUNNEL.md`
+
+Scripts de apoio:
+- `tools/install_cloudflared.ps1`
+- `tools/start_quick_tunnel.ps1`
+- `tools/apply_tunnel_host_to_esp32.ps1`
+- `tools/bootstrap_quick_tunnel_esp32.ps1`
+- `tools/run_iot.ps1`
+- `tools/run_ble_iot.ps1`
+- `tools/run_usb_iot.ps1`

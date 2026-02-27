@@ -65,6 +65,107 @@ def _cfg_int(value, default):
         return default
 
 
+def _cfg_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return int(value) != 0
+    if isinstance(value, str):
+        t = value.strip().lower()
+        if t in ("1", "true", "yes", "on"):
+            return True
+        if t in ("0", "false", "no", "off"):
+            return False
+    return default
+
+
+def _transport_mode(cfg):
+    mode = str(cfg.get("transport_mode", "wifi")).strip().lower()
+    if mode == "ble":
+        return "ble"
+    if mode == "usb":
+        return "usb"
+    return "wifi"
+
+
+def _is_ipv4_literal(value):
+    parts = str(value or "").split(".")
+    if len(parts) != 4:
+        return False
+    for part in parts:
+        if not part.isdigit():
+            return False
+        n = int(part)
+        if n < 0 or n > 255:
+            return False
+    return True
+
+
+def _cfg_dns_server(cfg):
+    dns = str(cfg.get("dns_server", "")).strip()
+    if _is_ipv4_literal(dns):
+        return dns
+
+    raw = cfg.get("dns_servers", [])
+    if isinstance(raw, str):
+        raw = raw.replace(";", ",").replace("\n", ",").split(",")
+    if isinstance(raw, list):
+        for item in raw:
+            cand = str(item or "").strip()
+            if _is_ipv4_literal(cand):
+                return cand
+    return ""
+
+
+def _apply_dns_override(sta_if, dns_server):
+    dns = str(dns_server or "").strip()
+    if not _is_ipv4_literal(dns):
+        return
+
+    try:
+        ip, mask, gw, current_dns = sta_if.ifconfig()
+    except Exception:
+        return
+
+    if str(current_dns) == dns:
+        return
+
+    try:
+        sta_if.ifconfig((ip, mask, gw, dns))
+        print("DNS override aplicado: {}".format(dns))
+    except Exception as e:
+        print("Falha ao aplicar DNS override: {}".format(e))
+
+
+def _retry_delay_s(cfg, failure_count):
+    base = _cfg_int(cfg.get("boot_retry_delay_s", 15), 15)
+    step = _cfg_int(cfg.get("boot_retry_step_s", 15), 15)
+    max_delay = _cfg_int(cfg.get("boot_retry_max_delay_s", 120), 120)
+
+    if base < 3:
+        base = 3
+    if step < 0:
+        step = 0
+    if max_delay < base:
+        max_delay = base
+    if failure_count < 1:
+        failure_count = 1
+
+    delay = base + (failure_count - 1) * step
+    if delay > max_delay:
+        delay = max_delay
+    return delay
+
+
+def _should_open_portal(cfg, failure_count):
+    every = _cfg_int(cfg.get("boot_open_portal_every_failures", 4), 4)
+    if every <= 0:
+        return False
+    if failure_count <= 0:
+        return False
+    return (failure_count % every) == 0
+
+
 def _sanitize_host_entry(value):
     host = str(value or "").strip()
     if host.startswith("http://"):
@@ -254,7 +355,14 @@ def _profile_server_cfg(profile, base_cfg):
     return cfg
 
 
-def _try_connect_profiles(sta_if, profiles, server_cfg, timeout_s=1):
+def _try_connect_profiles(
+    sta_if,
+    profiles,
+    server_cfg,
+    timeout_s=1,
+    require_server_probe=False,
+    dns_server="",
+):
     for profile in profiles:
         ssid = str(profile.get("ssid", "")).strip()
         password = str(profile.get("password", ""))
@@ -275,6 +383,10 @@ def _try_connect_profiles(sta_if, profiles, server_cfg, timeout_s=1):
         for _ in range(12):
             if sta_if.isconnected():
                 print("Wi-Fi conectado: {}".format(sta_if.ifconfig()[0]))
+                _apply_dns_override(sta_if, dns_server)
+                if not require_server_probe:
+                    return True
+
                 probe_cfg = _profile_server_cfg(profile, server_cfg)
                 if _server_reachable(sta_if, probe_cfg, timeout_s):
                     return True
@@ -295,6 +407,11 @@ def connect_wifi_and_server():
     cfg = _load_boot_cfg()
     profiles = _load_profiles(cfg)
     srv_cfg = _server_cfg(cfg)
+    dns_server = _cfg_dns_server(cfg)
+    strict_probe = _cfg_bool(
+        cfg.get("boot_require_server_probe", cfg.get("require_server_on_boot", False)),
+        False,
+    )
     timeout_s = _cfg_int(cfg.get("server_probe_timeout_s", 1), 1)
     if timeout_s < 1:
         timeout_s = 1
@@ -308,6 +425,7 @@ def connect_wifi_and_server():
     sta_if.active(True)
 
     if sta_if.isconnected():
+        _apply_dns_override(sta_if, dns_server)
         current_ssid = _connected_ssid(sta_if)
         if current_ssid:
             print("Wi-Fi ja conectado '{}' : {}".format(current_ssid, sta_if.ifconfig()))
@@ -321,17 +439,29 @@ def connect_wifi_and_server():
                 probe_cfg = _profile_server_cfg(p, srv_cfg)
                 break
 
-        if _server_reachable(sta_if, probe_cfg, timeout_s):
+        if strict_probe:
+            if _server_reachable(sta_if, probe_cfg, timeout_s):
+                return True, cfg
+
+            print("Wi-Fi conectado, mas servidor inacessivel. Tentando outros perfis...")
+            try:
+                sta_if.disconnect()
+            except Exception:
+                pass
+            time.sleep(1)
+        else:
+            if not _server_reachable(sta_if, probe_cfg, timeout_s):
+                print("Wi-Fi OK; servidor ainda indisponivel no boot. Seguindo para main_lite.")
             return True, cfg
 
-        print("Wi-Fi conectado, mas servidor inacessivel. Tentando outros perfis...")
-        try:
-            sta_if.disconnect()
-        except Exception:
-            pass
-        time.sleep(1)
-
-    if _try_connect_profiles(sta_if, profiles, srv_cfg, timeout_s):
+    if _try_connect_profiles(
+        sta_if,
+        profiles,
+        srv_cfg,
+        timeout_s,
+        require_server_probe=strict_probe,
+        dns_server=dns_server,
+    ):
         return True, cfg
 
     return False, cfg
@@ -409,57 +539,128 @@ def _prepare_for_main_import():
 # ---------------------------------------------------------------------------
 # Boot execution
 # ---------------------------------------------------------------------------
-ok, cfg = connect_wifi_and_server()
+boot_failures = 0
+cfg = _load_boot_cfg()
+transport_mode = _transport_mode(cfg)
+ok = False
+
+if transport_mode in ("ble", "usb"):
+    ok = True
+    if transport_mode == "ble":
+        print("Modo BLE selecionado. Ignorando etapa de Wi-Fi no boot.")
+    else:
+        print("Modo USB selecionado. Ignorando etapa de Wi-Fi no boot.")
+else:
+    while True:
+        ok, cfg = connect_wifi_and_server()
+        if ok:
+            break
+
+        boot_failures += 1
+        if _should_open_portal(cfg, boot_failures):
+            _start_config_portal(cfg)
+
+        if not _cfg_bool(cfg.get("boot_retry_enabled", True), True):
+            print("Sem conexao Wi-Fi. Retry automatico desativado.")
+            break
+
+        delay_s = _retry_delay_s(cfg, boot_failures)
+        print(
+            "Sem conexao Wi-Fi/servidor. Nova tentativa em {}s (falha #{})".format(
+                delay_s,
+                boot_failures,
+            )
+        )
+        time.sleep(delay_s)
+
 if ok:
-    use_lite = bool(cfg.get("force_main_lite", True))
-    if use_lite:
-        print("Executando main_lite.py a partir do boot.py...")
+    if transport_mode == "ble":
+        print("Executando main_ble.py a partir do boot.py...")
         try:
             _prepare_for_main_import()
-            import main_lite
+            import main_ble
         except MemoryError:
-            print("MemoryError em main_lite; reiniciando...")
+            print("MemoryError em main_ble; reiniciando...")
             try:
                 time.sleep(1)
             except Exception:
                 pass
             machine.reset()
         except Exception as e:
-            print("Falha ao iniciar main_lite: {}".format(e))
+            print("Falha ao iniciar main_ble: {}".format(e))
+            try:
+                time.sleep(1)
+            except Exception:
+                pass
+            machine.reset()
+    elif transport_mode == "usb":
+        print("Executando main_usb.py a partir do boot.py...")
+        try:
+            _prepare_for_main_import()
+            import main_usb
+        except MemoryError:
+            print("MemoryError em main_usb; reiniciando...")
+            try:
+                time.sleep(1)
+            except Exception:
+                pass
+            machine.reset()
+        except Exception as e:
+            print("Falha ao iniciar main_usb: {}".format(e))
             try:
                 time.sleep(1)
             except Exception:
                 pass
             machine.reset()
     else:
-        print("Executando main.py a partir do boot.py...")
-        try:
-            _prepare_for_main_import()
-            import main
-        except MemoryError:
-            print("MemoryError em main.py; tentando main_lite.py...")
+        use_lite = bool(cfg.get("force_main_lite", True))
+        if use_lite:
+            print("Executando main_lite.py a partir do boot.py...")
             try:
-                gc.collect()
-            except Exception:
-                pass
-            try:
+                _prepare_for_main_import()
                 import main_lite
-            except Exception as e2:
-                print("Falha em main_lite.py: {}".format(e2))
-                print("Reiniciando...")
+            except MemoryError:
+                print("MemoryError em main_lite; reiniciando...")
                 try:
                     time.sleep(1)
                 except Exception:
                     pass
                 machine.reset()
-        except Exception as e:
-            print("Falha ao iniciar main.py: {}".format(e))
+            except Exception as e:
+                print("Falha ao iniciar main_lite: {}".format(e))
+                try:
+                    time.sleep(1)
+                except Exception:
+                    pass
+                machine.reset()
+        else:
+            print("Executando main.py a partir do boot.py...")
             try:
-                time.sleep(1)
-            except Exception:
-                pass
-            machine.reset()
+                _prepare_for_main_import()
+                import main
+            except MemoryError:
+                print("MemoryError em main.py; tentando main_lite.py...")
+                try:
+                    gc.collect()
+                except Exception:
+                    pass
+                try:
+                    import main_lite
+                except Exception as e2:
+                    print("Falha em main_lite.py: {}".format(e2))
+                    print("Reiniciando...")
+                    try:
+                        time.sleep(1)
+                    except Exception:
+                        pass
+                    machine.reset()
+            except Exception as e:
+                print("Falha ao iniciar main.py: {}".format(e))
+                try:
+                    time.sleep(1)
+                except Exception:
+                    pass
+                machine.reset()
 else:
-    _start_config_portal(cfg)
-    print("Sem conexao Wi-Fi. Portal encerrado.")
+    print("Sem conexao Wi-Fi. Boot finalizado sem iniciar main.")
 

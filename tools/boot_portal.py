@@ -89,7 +89,11 @@ def _load_profiles(path, fallback_profiles):
             ssid = str(item.get("ssid", "")).strip()
             password = str(item.get("password", ""))
             if ssid:
-                out.append({"ssid": ssid, "password": password})
+                entry = {"ssid": ssid, "password": password}
+                sip = _sanitize_host_entry(item.get("server_ip", ""))
+                if sip:
+                    entry["server_ip"] = sip
+                out.append(entry)
 
     if out:
         return out
@@ -103,11 +107,15 @@ def _save_profiles(path, profiles):
             continue
         ssid = str(item.get("ssid", "")).strip()
         password = str(item.get("password", ""))
+        server_ip = _sanitize_host_entry(item.get("server_ip", ""))
         if not ssid:
             continue
         if any(ssid == p.get("ssid") for p in clean):
             continue
-        clean.append({"ssid": ssid, "password": password})
+        entry = {"ssid": ssid, "password": password}
+        if server_ip:
+            entry["server_ip"] = server_ip
+        clean.append(entry)
         if len(clean) >= 8:
             break
 
@@ -356,7 +364,27 @@ def start_config_portal(config_file="/device_config.json", wifi_profile_file="/w
                 current_cfg["wifi_profile_file"] = wifi_profile_file
 
                 profiles = _load_profiles(wifi_profile_file, default_profiles)
-                merged = [{"ssid": ssid, "password": password}]
+                selected_server_ip = _sanitize_host_entry(
+                    fallback_ip or current_cfg.get("server_fallback_ip", "")
+                )
+                if not selected_server_ip:
+                    fallback_hosts = current_cfg.get("server_fallback_ips", [])
+                    if isinstance(fallback_hosts, list):
+                        for item in fallback_hosts:
+                            candidate = _sanitize_host_entry(item)
+                            if candidate:
+                                selected_server_ip = candidate
+                                break
+                if not selected_server_ip:
+                    selected_server_ip = _sanitize_host_entry(
+                        current_cfg.get("server_hostname", "")
+                    )
+
+                primary_profile = {"ssid": ssid, "password": password}
+                if selected_server_ip:
+                    primary_profile["server_ip"] = selected_server_ip
+
+                merged = [primary_profile]
                 for p in profiles:
                     if p.get("ssid") != ssid:
                         merged.append(p)

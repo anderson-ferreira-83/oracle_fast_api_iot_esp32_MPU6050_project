@@ -52,6 +52,20 @@ def _cfg_int(value, default):
         return default
 
 
+def _cfg_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return int(value) != 0
+    if isinstance(value, str):
+        t = value.strip().lower()
+        if t in ("1", "true", "yes", "on"):
+            return True
+        if t in ("0", "false", "no", "off"):
+            return False
+    return default
+
+
 def _sanitize_host_entry(value):
     host = str(value or "").strip()
     if host.startswith("http://"):
@@ -61,6 +75,25 @@ def _sanitize_host_entry(value):
     if "/" in host:
         host = host.split("/", 1)[0]
     return host.strip()
+
+
+def _normalize_hosts(raw_hosts, fallback_single=""):
+    values = []
+    if isinstance(raw_hosts, list):
+        values = raw_hosts
+    elif isinstance(raw_hosts, str):
+        values = raw_hosts.replace("\n", ",").replace(";", ",").split(",")
+
+    out = []
+    for item in values:
+        host = _sanitize_host_entry(item)
+        if host and host not in out:
+            out.append(host)
+
+    single = _sanitize_host_entry(fallback_single)
+    if single and single not in out:
+        out.insert(0, single)
+    return out
 
 
 def _is_ipv4_literal(host):
@@ -74,6 +107,42 @@ def _is_ipv4_literal(host):
         if n < 0 or n > 255:
             return False
     return True
+
+
+def _cfg_dns_server(cfg):
+    dns = str(cfg.get("dns_server", "")).strip()
+    if _is_ipv4_literal(dns):
+        return dns
+
+    raw = cfg.get("dns_servers", [])
+    if isinstance(raw, str):
+        raw = raw.replace(";", ",").replace("\n", ",").split(",")
+    if isinstance(raw, list):
+        for item in raw:
+            cand = str(item or "").strip()
+            if _is_ipv4_literal(cand):
+                return cand
+    return ""
+
+
+def _apply_dns_override(wlan, dns_server):
+    dns = str(dns_server or "").strip()
+    if not _is_ipv4_literal(dns):
+        return
+
+    try:
+        ip, mask, gw, current_dns = wlan.ifconfig()
+    except Exception:
+        return
+
+    if str(current_dns) == dns:
+        return
+
+    try:
+        wlan.ifconfig((ip, mask, gw, dns))
+        print("[DNS] override {}".format(dns))
+    except Exception as e:
+        print("[DNS] fail {}".format(e))
 
 
 def _connected_ssid(wlan):
@@ -100,29 +169,86 @@ def _server_ip_for_ssid(profiles, ssid):
 
 
 def _first_server_host(cfg):
-    ip = _sanitize_host_entry(cfg.get("server_fallback_ip", ""))
-    if ip:
-        return ip
-
-    ips = cfg.get("server_fallback_ips", [])
-    if isinstance(ips, list):
-        for item in ips:
-            h = _sanitize_host_entry(item)
-            if h:
-                return h
-
-    host = _sanitize_host_entry(cfg.get("server_hostname", ""))
-    if host:
-        return host
-
+    hosts = _server_candidates(cfg, [], "")
+    if hosts:
+        return hosts[0]
     return "10.125.237.165:8000"
 
 
-def _resolve_server_host(cfg, profiles, connected_ssid):
+def _server_candidates(cfg, profiles, connected_ssid):
+    out = []
+
+    hostname = _sanitize_host_entry(cfg.get("server_hostname", ""))
+    prefer_hostname = _cfg_bool(cfg.get("prefer_server_hostname", True), True)
+    if hostname.endswith(".trycloudflare.com"):
+        # Quick tunnel muda frequentemente; host atual deve ter prioridade maxima.
+        prefer_hostname = True
+
+    if hostname and prefer_hostname:
+        out.append(hostname)
+
     profile_ip = _server_ip_for_ssid(profiles, connected_ssid)
     if profile_ip:
-        return profile_ip
-    return _first_server_host(cfg)
+        out.append(profile_ip)
+
+    fallback_ip = _sanitize_host_entry(cfg.get("server_fallback_ip", ""))
+    if fallback_ip and fallback_ip not in out:
+        out.append(fallback_ip)
+
+    for item in _normalize_hosts(cfg.get("server_fallback_ips", []), fallback_ip):
+        if item and item not in out:
+            out.append(item)
+
+    if hostname and hostname not in out:
+        out.append(hostname)
+
+    if not out:
+        out.append("10.125.237.165:8000")
+    return out
+
+
+def _resolve_server_host(cfg, profiles, connected_ssid):
+    return _server_candidates(cfg, profiles, connected_ssid)[0]
+
+
+def _split_host_port(host_entry):
+    host = _sanitize_host_entry(host_entry)
+    if ":" in host:
+        maybe_host, maybe_port = host.rsplit(":", 1)
+        if maybe_port.isdigit():
+            return maybe_host, int(maybe_port)
+    return host, 80
+
+
+def _build_url(host, api_path):
+    return "http://{}{}".format(host, api_path)
+
+
+def _remember_profile_server(profiles, ssid, server_host):
+    if not ssid:
+        return False
+    clean_host = _sanitize_host_entry(server_host)
+    host_only, _ = _split_host_port(clean_host)
+    if not clean_host or not _is_ipv4_literal(host_only):
+        return False
+
+    changed = False
+    for p in profiles:
+        if not isinstance(p, dict):
+            continue
+        if str(p.get("ssid", "")).strip() != ssid:
+            continue
+        current = _sanitize_host_entry(p.get("server_ip", ""))
+        if current == clean_host:
+            return False
+        p["server_ip"] = clean_host
+        changed = True
+        break
+
+    if not changed:
+        return False
+
+    return _save_json(WIFI_PROFILE_FILE, profiles)
 
 
 def _load_wifi_profiles(cfg):
@@ -155,7 +281,7 @@ def _load_wifi_profiles(cfg):
     return [{"ssid": "S20_Ders@0", "password": "F0xbam1844", "server_ip": "10.125.237.165:8000"}]
 
 
-def _wifi_connect_profiles(wlan, profiles):
+def _wifi_connect_profiles(wlan, profiles, dns_server=""):
     wlan.active(True)
 
     for profile in profiles:
@@ -177,6 +303,7 @@ def _wifi_connect_profiles(wlan, profiles):
 
         for _ in range(12):
             if wlan.isconnected():
+                _apply_dns_override(wlan, dns_server)
                 print("[WIFI] Connected {}".format(wlan.ifconfig()[0]))
                 return True
             time.sleep(1)
@@ -184,7 +311,7 @@ def _wifi_connect_profiles(wlan, profiles):
     return False
 
 
-def _wifi_recover(wlan, profiles):
+def _wifi_recover(wlan, profiles, dns_server=""):
     try:
         wlan.disconnect()
     except Exception:
@@ -204,7 +331,7 @@ def _wifi_recover(wlan, profiles):
     except Exception:
         pass
 
-    return _wifi_connect_profiles(wlan, profiles)
+    return _wifi_connect_profiles(wlan, profiles, dns_server=dns_server)
 
 
 def _bytes_to_int(h, l):
@@ -513,6 +640,7 @@ def main():
     api_path = str(cfg.get("api_path", API_PATH_DEFAULT)).strip() or API_PATH_DEFAULT
     if not api_path.startswith("/"):
         api_path = "/" + api_path
+    dns_server = _cfg_dns_server(cfg)
 
     sample_rate = _cfg_int(cfg.get("target_sample_rate", 15), 15)
     if sample_rate < 1:
@@ -533,21 +661,26 @@ def main():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
 
-    if not wlan.isconnected():
-        if not _wifi_connect_profiles(wlan, profiles):
+    if wlan.isconnected():
+        _apply_dns_override(wlan, dns_server)
+    else:
+        if not _wifi_connect_profiles(wlan, profiles, dns_server=dns_server):
             print("[ERR] Wi-Fi unavailable")
             time.sleep(2)
             machine.reset()
 
     ssid = _connected_ssid(wlan)
-    host = _resolve_server_host(cfg, profiles, ssid)
-    url = "http://{}{}".format(host, api_path)
+    server_hosts = _server_candidates(cfg, profiles, ssid)
+    server_idx = 0
+    host = server_hosts[server_idx]
+    url = _build_url(host, api_path)
     fan_state = str(cfg.get("mode", "RAW")).strip() or "RAW"
 
     print("=" * 40)
     print("ESP32 MPU6050 v7.4-lite")
     print("WiFi: {} ({})".format(wlan.ifconfig()[0], ssid))
     print("URL: {}".format(url))
+    print("Fallbacks: {}".format(", ".join(server_hosts)))
     print("Rate: {} Hz | Batch: {}".format(sample_rate, batch_size))
     print("=" * 40)
 
@@ -604,6 +737,7 @@ def main():
                 "ssid": ssid,
                 "ip": wlan.ifconfig()[0],
                 "rssi": rssi,
+                "last_endpoint": host,
             }
 
         try:
@@ -621,6 +755,9 @@ def main():
         if ok:
             sent_ok += 1
             fail_streak = 0
+
+            if _remember_profile_server(profiles, ssid, host):
+                print("[NET] server_ip salvo para '{}' -> {}".format(ssid, host))
 
             if isinstance(resp, dict):
                 # OTA network config (triggers reboot if applied)
@@ -670,15 +807,25 @@ def main():
             if fail_streak <= 3 or (fail_streak % 10) == 0:
                 print("[HTTP] fail {} ({})".format(fail_streak, info))
 
+            if len(server_hosts) > 1 and (fail_streak in (2, 4, 8) or (fail_streak % 5) == 0):
+                server_idx = (server_idx + 1) % len(server_hosts)
+                next_host = server_hosts[server_idx]
+                if next_host != host:
+                    host = next_host
+                    url = _build_url(host, api_path)
+                    print("[NET] Switching server -> {}".format(host))
+
             if fail_streak in (3, 6, 12):
                 print("[WIFI] Recovering stack...")
-                if _wifi_recover(wlan, profiles):
+                if _wifi_recover(wlan, profiles, dns_server=dns_server):
                     new_ssid = _connected_ssid(wlan)
                     ssid = new_ssid
-                    new_host = _resolve_server_host(cfg, profiles, new_ssid)
+                    server_hosts = _server_candidates(cfg, profiles, new_ssid)
+                    server_idx = 0
+                    new_host = server_hosts[server_idx]
                     if new_host != host:
                         host = new_host
-                        url = "http://{}{}".format(host, api_path)
+                        url = _build_url(host, api_path)
                         print("[NET] Server -> {}".format(host))
 
             if fail_streak >= 20:

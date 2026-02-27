@@ -13,8 +13,8 @@ $HOST_ADDR    = "0.0.0.0"
 $PORT         = 8000
 $HEALTH_URL   = "http://127.0.0.1:$PORT/health"
 $PAGES        = @(
-    "http://127.0.0.1:$PORT/web/index.html",
-    "http://127.0.0.1:$PORT/web/control.html"
+    "http://127.0.0.1:$PORT/web/control.html",
+    "http://127.0.0.1:$PORT/web/index.html"
 )
 $MAX_WAIT_SEC = 30   # tempo maximo aguardando o servidor subir
 
