@@ -2,6 +2,75 @@
 
 Objetivo: operar o ESP32 alternando entre duas maquinas sem editar IP manualmente.
 
+---
+
+## 0) PRIMEIRO ACESSO APOS RENOMEACAO DO REPOSITORIO (fazer 1x em cada maquina)
+
+O repositorio foi renomeado em 2026-03-01. Em cada maquina, antes de qualquer push/pull:
+
+```powershell
+# Na ScienceMachine (desktop):
+cd C:\xampp\htdocs\oracle_fast_api_iot_esp32_MPU6050_project
+
+# No SAMSUNG-900X5T (notebook):
+cd C:\Repositorio_Github\2_Projetos\oracle_fast_api_iot_esp32_MPU6050_project
+
+# Em ambas, executar:
+git remote set-url origin https://github.com/anderson-ferreira-83/oracle_iot_esp32_MPU6050_project.git
+git remote get-url origin   # confirmar a saida
+git pull                    # sincronizar com o remoto
+```
+
+Novo URL: `https://github.com/anderson-ferreira-83/oracle_iot_esp32_MPU6050_project.git`
+A pasta local NAO muda de nome — apenas o remote.
+
+---
+
+## 0.1) SETUP ORACLE XE (fazer 1x em maquina nova ou apos reinstalacao)
+
+Prerequisitos: Oracle XE 21c instalado, servicos `OracleServiceXE` e `OracleTNSListenerXE` rodando.
+
+### Verificar servicos
+```powershell
+Get-Service | Where-Object { $_.Name -like "Oracle*" } | Select-Object Name, Status
+# OracleServiceXE e OracleTNSListenerXE devem estar Running
+```
+
+### Criar usuario dersao (substitua SENHA_SYS pela senha definida na instalacao)
+```powershell
+# sqlplus esta em: C:\app\Anderson\product\21c\dbhomeXE\bin\sqlplus.exe
+# Adicione ao PATH ou use o caminho completo
+
+sqlplus sys/SENHA_SYS@localhost:1521/xepdb1 as sysdba `
+  @database\create_user_dersao.sql
+```
+
+O script `database\create_user_dersao.sql` ja esta no repositorio e cria o usuario com as permissoes corretas.
+
+### Criar tabelas
+```powershell
+sqlplus dersao/986960440@localhost:1521/xepdb1 `
+  @database\database_setup.sql
+```
+
+### Testar conexao Python
+```powershell
+$env:ORACLE_HOST         = "localhost"
+$env:ORACLE_PORT         = "1521"
+$env:ORACLE_SERVICE_NAME = "xepdb1"
+$env:ORACLE_USER         = "dersao"
+$env:ORACLE_PASSWORD     = "986960440"
+py -3.11 tools\test_oracle_python_connection.py
+# Esperado: [OK] Conexao Oracle estabelecida. STATUS=OK
+```
+
+### Instalar dependencias Python (se necessario)
+```powershell
+py -3.11 -m pip install -r backend\requirements.txt
+```
+
+---
+
 ## 1) Mapa atual (configurado)
 - SSID `S20_Ders@0` -> `SAMSUNG-900X5T.local:8000`
 - SSID `Dersao83` -> `ScienceMachine.local:8000`
