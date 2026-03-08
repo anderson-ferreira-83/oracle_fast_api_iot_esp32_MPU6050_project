@@ -1,0 +1,27 @@
+{
+  "export_id": "exp_20260307_192837_col_20260307_185012_100hz",
+  "exported_at_iso": "2026-03-07T19:28:38.839092-03:00",
+  "exported_at_epoch": 1772922518.839092,
+  "db_vendor": "ORACLE",
+  "source_table": "sensor_training_data",
+  "filter": {
+    "collection_id": "col_20260307_185012_100hz",
+    "device_id": "ESP32_MPU6050_ORACLE"
+  },
+  "collection_id": "col_20260307_185012_100hz",
+  "device_id": "ESP32_MPU6050_ORACLE",
+  "filename": "raw_sensor_data_20260307_192837.csv",
+  "csv_path": "C:\\Users\\Anderson\\Downloads\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260307_192837.csv",
+  "csv_sha256": "564aa9bc573fd37aa632636bd971c76934167c1c599f6dc297761ca2da8f18d5",
+  "rows": 230282,
+  "ts_min": 1772920226.957,
+  "ts_max": 1772922506.979,
+  "duration_s": 2280.0220000743866,
+  "sample_rate_min": 100.0,
+  "sample_rate_max": 100.0,
+  "classes": {
+    "RAW": 230282
+  },
+  "status": "success",
+  "manifest_path": "C:\\Users\\Anderson\\Downloads\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\metrics\\exports\\exp_20260307_192837_col_20260307_185012_100hz.json"
+}

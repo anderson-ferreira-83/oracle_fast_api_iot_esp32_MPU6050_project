@@ -82,7 +82,90 @@
       "features_count": 16,
       "n_classes": 7,
       "n_estimators": 200
+    },
+    {
+      "type": "feature_engineering",
+      "timestamp": "20260307_193910",
+      "eda_id": "eda_20260307_192958",
+      "fe_id": "fe_20260307_193910",
+      "eda_source": {
+        "eda_id": "eda_20260307_192958",
+        "collection_id": "col_20260307_185012_100hz",
+        "eda_timestamp": "20260307_193528",
+        "filtered_csv": "output\\data\\raw_sensor_data_filtered_20260307_193528.csv",
+        "rows": 212095,
+        "sample_hz": 100.0,
+        "active_classes": [
+          "LOW_ROT_ON",
+          "MEDIUM_ROT_ON",
+          "HIGH_ROT_ON",
+          "LOW_ROT_OFF",
+          "MEDIUM_ROT_OFF",
+          "HIGH_ROT_OFF",
+          "FAN_OFF"
+        ],
+        "data_source": "CSV",
+        "source_table": "c:\\Users\\Anderson\\Downloads\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260307_192837.csv",
+        "export_id": "exp_20260307_192837_col_20260307_185012_100hz",
+        "raw_source_path": "c:\\Users\\Anderson\\Downloads\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\raw_sensor_data_20260307_192837.csv"
+      },
+      "feature_config_version": "5.19",
+      "features_csv_path": "c:\\Users\\Anderson\\Downloads\\oracle_fast_api_iot_esp32_MPU6050_project\\notebooks\\output\\data\\features_extracted_20260307_193910.csv",
+      "features_csv_hash": "09eed9d0ce7b28533924afa7b9ae08e5b5d11570ef691bb51a33b5910b255289",
+      "selected_features_count": 16,
+      "n_classes": 7,
+      "selection_method": "cohens_d_min_adjacent_classwise_corr_pairwise_score_topk",
+      "collection_ids": [
+        "col_20260307_185012_100hz"
+      ]
+    },
+    {
+      "type": "model_training",
+      "timestamp": "20260307_194630",
+      "model_filename": "gnb_model_20260307.json",
+      "model_hash": "38abbaf42b63d3072f6f62de28ddafa38f10cecd8977231c254c1040c22e6a55",
+      "feature_config_version": "5.19",
+      "eda_id": "eda_20260307_192958",
+      "fe_id": "fe_20260307_193910",
+      "features_csv_file": "features_latest.csv",
+      "features_csv_hash": "09eed9d0ce7b28533924afa7b9ae08e5b5d11570ef691bb51a33b5910b255289",
+      "train_accuracy": 0.9851494513810064,
+      "cv_accuracy_mean": 0.984959797455218,
+      "features_count": 16,
+      "n_classes": 7
+    },
+    {
+      "type": "model_training",
+      "timestamp": "20260307_194630",
+      "model_filename": "logreg_model_20260307.json",
+      "model_hash": "44b26e6726a96e5b04822602d1df3c04fda0db31c74529cd0ab22fb57ded7d97",
+      "feature_config_version": "5.19",
+      "eda_id": "eda_20260307_192958",
+      "fe_id": "fe_20260307_193910",
+      "features_csv_file": "features_latest.csv",
+      "features_csv_hash": "09eed9d0ce7b28533924afa7b9ae08e5b5d11570ef691bb51a33b5910b255289",
+      "train_accuracy": 0.9998108210367007,
+      "features_count": 16,
+      "n_classes": 7
+    },
+    {
+      "type": "model_training",
+      "timestamp": "20260307_194631",
+      "model_filename": "rf_model_20260307.json",
+      "model_hash": "0bc3273b6fa4183cd4c46eaba690457430ad97d621de13fd24e590a6466507cc",
+      "model_type": "random_forest",
+      "is_primary": true,
+      "feature_config_version": "5.19",
+      "eda_id": "eda_20260307_192958",
+      "fe_id": "fe_20260307_193910",
+      "features_csv_file": "features_latest.csv",
+      "features_csv_hash": "09eed9d0ce7b28533924afa7b9ae08e5b5d11570ef691bb51a33b5910b255289",
+      "train_accuracy": 1.0,
+      "cv_accuracy_mean": 0.9995270972979864,
+      "features_count": 16,
+      "n_classes": 7,
+      "n_estimators": 200
     }
   ],
-  "updated_at": "2026-02-24T00:53:03Z"
+  "updated_at": "2026-03-07T22:46:31Z"
 }

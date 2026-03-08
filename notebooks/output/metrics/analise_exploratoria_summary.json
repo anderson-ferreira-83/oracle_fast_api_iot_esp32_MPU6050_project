@@ -1,39 +1,39 @@
 {
-  "timestamp": "20260223_214140",
-  "raw_samples": 210678,
-  "filtered_samples": 210593,
-  "common_window_s": 299.7605471611023,
+  "timestamp": "20260307_193910",
+  "raw_samples": 212095,
+  "filtered_samples": 212089,
+  "common_window_s": 299.97900009155273,
   "window_size": 100,
   "step_size": 20,
-  "total_windows": 10498,
-  "feature_count": 254,
+  "total_windows": 10572,
+  "feature_count": 265,
   "selected_feature_count": 16,
   "class_distribution_raw": {
-    "LOW_ROT_OFF": 31383,
-    "FAN_OFF": 30940,
-    "LOW_ROT_ON": 29929,
-    "MEDIUM_ROT_OFF": 29920,
-    "MEDIUM_ROT_ON": 29899,
-    "HIGH_ROT_OFF": 29480,
-    "HIGH_ROT_ON": 29127
+    "FAN_OFF": 30303,
+    "LOW_ROT_OFF": 30301,
+    "MEDIUM_ROT_ON": 30300,
+    "HIGH_ROT_ON": 30299,
+    "LOW_ROT_ON": 30298,
+    "MEDIUM_ROT_OFF": 30297,
+    "HIGH_ROT_OFF": 30297
   },
   "class_distribution_filtered": {
-    "LOW_ROT_OFF": 31369,
-    "FAN_OFF": 30928,
-    "MEDIUM_ROT_OFF": 29920,
-    "LOW_ROT_ON": 29919,
-    "MEDIUM_ROT_ON": 29876,
-    "HIGH_ROT_OFF": 29466,
-    "HIGH_ROT_ON": 29115
+    "FAN_OFF": 30302,
+    "LOW_ROT_OFF": 30300,
+    "MEDIUM_ROT_ON": 30299,
+    "HIGH_ROT_ON": 30299,
+    "LOW_ROT_ON": 30297,
+    "MEDIUM_ROT_OFF": 30296,
+    "HIGH_ROT_OFF": 30296
   },
   "class_distribution_windows": {
-    "LOW_ROT_OFF": 1564,
-    "FAN_OFF": 1542,
-    "MEDIUM_ROT_OFF": 1492,
-    "LOW_ROT_ON": 1491,
-    "MEDIUM_ROT_ON": 1489,
-    "HIGH_ROT_OFF": 1469,
-    "HIGH_ROT_ON": 1451
+    "LOW_ROT_OFF": 1511,
+    "FAN_OFF": 1511,
+    "LOW_ROT_ON": 1510,
+    "MEDIUM_ROT_ON": 1510,
+    "HIGH_ROT_ON": 1510,
+    "MEDIUM_ROT_OFF": 1510,
+    "HIGH_ROT_OFF": 1510
   },
   "anova_alpha": 0.05,
   "correlation_threshold": 0.85,
@@ -46,76 +46,76 @@
   "min_cohens_d": 0.3,
   "cohens_score_mode": "d_min_all",
   "selected_features": [
-    "gyro_y_dps_std",
-    "gyro_y_dps_sp_p1",
-    "accel_y_g_fft_high",
-    "gyro_y_dps_fft_high",
-    "accel_x_g_std",
-    "gyro_y_dps_fft_mid",
-    "gyro_y_dps_p10",
-    "gyro_y_dps_sp_p2",
-    "gyro_y_dps_range",
-    "gyro_y_dps_sp_p6",
+    "gyro_x_dps_fft_high",
+    "accel_x_g_fft_high",
+    "vibration_dps_fft_high",
+    "accel_z_g_sp_p2",
     "accel_z_g_fft_high",
-    "vibration_dps_p95",
-    "gyro_y_dps_p90",
-    "gyro_z_dps_sp_p13",
-    "accel_mag_g_fft_low",
-    "gyro_x_dps_range"
+    "accel_x_g_rms",
+    "gyro_x_dps_p25",
+    "accel_z_g_sp_p12",
+    "accel_z_g_range",
+    "accel_x_g_range",
+    "accel_y_g_sp_p2",
+    "accel_y_g_sp_p1",
+    "accel_x_g_sp_p7",
+    "gyro_z_dps_std",
+    "accel_mag_g_std",
+    "accel_y_g_fft_high"
   ],
   "sampling_validation": {
     "status": "computed_from_loaded_data",
     "expected_hz": 100.0,
     "per_class": {
       "LOW_ROT_ON": {
-        "samples": 29929,
-        "duration_s": 299.8775899410248,
-        "actual_hz": 99.8,
-        "deviation_pct": 0.2
+        "samples": 30298,
+        "duration_s": 299.98799991607666,
+        "actual_hz": 101.0,
+        "deviation_pct": 1.0
       },
       "MEDIUM_ROT_ON": {
-        "samples": 29899,
-        "duration_s": 299.8793568611145,
-        "actual_hz": 99.7,
-        "deviation_pct": 0.3
+        "samples": 30300,
+        "duration_s": 299.98799991607666,
+        "actual_hz": 101.0,
+        "deviation_pct": 1.0
       },
       "HIGH_ROT_ON": {
-        "samples": 29127,
-        "duration_s": 299.8753390312195,
-        "actual_hz": 97.13,
-        "deviation_pct": 2.87
+        "samples": 30299,
+        "duration_s": 299.97900009155273,
+        "actual_hz": 101.0,
+        "deviation_pct": 1.0
       },
       "LOW_ROT_OFF": {
-        "samples": 31383,
-        "duration_s": 299.8760440349579,
-        "actual_hz": 104.65,
-        "deviation_pct": 4.65
+        "samples": 30301,
+        "duration_s": 299.98800015449524,
+        "actual_hz": 101.01,
+        "deviation_pct": 1.01
       },
       "MEDIUM_ROT_OFF": {
-        "samples": 29920,
-        "duration_s": 299.7605471611023,
-        "actual_hz": 99.81,
-        "deviation_pct": 0.19
+        "samples": 30297,
+        "duration_s": 299.9830000400543,
+        "actual_hz": 101.0,
+        "deviation_pct": 1.0
       },
       "HIGH_ROT_OFF": {
-        "samples": 29480,
-        "duration_s": 299.8740129470825,
-        "actual_hz": 98.31,
-        "deviation_pct": 1.69
+        "samples": 30297,
+        "duration_s": 299.9869999885559,
+        "actual_hz": 100.99,
+        "deviation_pct": 0.99
       },
       "FAN_OFF": {
-        "samples": 30940,
-        "duration_s": 299.88054513931274,
-        "actual_hz": 103.17,
-        "deviation_pct": 3.17
+        "samples": 30303,
+        "duration_s": 299.98800015449524,
+        "actual_hz": 101.01,
+        "deviation_pct": 1.01
       }
     },
     "note": "Taxa estimada via timestamps das 7 classes ativas."
   },
   "collection_ids": [
-    "col_20260223_204702_100hz"
+    "col_20260307_185012_100hz"
   ],
-  "features_csv_hash": "2c60fd3138b4a6f8bc9ceaa2d4211a118cccf4587b3468b329ad6c2c7dffc32e",
+  "features_csv_hash": "09eed9d0ce7b28533924afa7b9ae08e5b5d11570ef691bb51a33b5910b255289",
   "n_classes": 7,
   "classes": [
     "LOW_ROT_ON",

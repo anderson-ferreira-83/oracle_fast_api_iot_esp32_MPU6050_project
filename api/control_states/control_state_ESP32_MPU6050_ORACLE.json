@@ -1,6 +1,6 @@
 {
   "mode": "PAUSE",
-  "sample_rate": 10,
+  "sample_rate": 100,
   "ingest_enabled": false,
   "cmd_speed_label": "OFF",
   "rot_state_label": "STOPPED",
@@ -27,7 +27,7 @@
   "server_fallback_ip": "10.125.237.165:8000",
   "server_fallback_ips": [],
   "api_path": "/api/ingest",
-  "collection_id": "col_20260301_152250_100hz",
+  "collection_id": "col_20260307_185012_100hz",
   "data_purpose": "MONITORING",
   "new_collection": true,
   "sends_per_sec": 5,

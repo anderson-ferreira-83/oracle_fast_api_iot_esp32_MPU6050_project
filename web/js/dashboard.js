@@ -2139,7 +2139,7 @@ async function startDataFetching() {
 
 const ML_CONFIG = {
   MODEL_INDEX_URL: '../models/MODEL_INDEX.json',   // Map sample_rate -> model
-  MODEL_URL: 'models/gnb_model_20260223.json',  // Modelo primario GNB 7-class 100Hz (100% CV)
+  MODEL_URL: 'models/gnb_model_20260307.json',  // Modelo primario GNB 7-class 100Hz (100% CV)
   PREDICTION_INTERVAL: 200,                      // Predicao a cada 200ms (5Hz)
   ENABLED: true,                                 // ML classification enabled by default
 };

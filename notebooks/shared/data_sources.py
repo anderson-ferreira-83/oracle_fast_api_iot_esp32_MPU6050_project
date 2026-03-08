@@ -315,10 +315,10 @@ def load_raw_from_oracle(
     limit=0,
     table="sensor_training_data",
 ):
-    """Carrega dados raw do Oracle em formato compativel com notebooks.
+    """Carrega dados raw do Oracle (sensor_training_data ou sensor_data legado).
 
-    Usa sensor_training_data por padrao (coletas supervisionadas).
-    Para dados legados use table='sensor_data'.
+    Aceita connection_str como string SQLAlchemy OU engine ja criado.
+    Retorna DataFrame com colunas padronizadas (ts_epoch -> timestamp).
     Requer pandas + sqlalchemy + python-oracledb.
     """
     import pandas as pd
@@ -363,7 +363,70 @@ def load_raw_from_oracle(
         sql = f"SELECT * FROM ({sql}) WHERE ROWNUM <= :lim"
         params["lim"] = int(limit)
 
-    engine = create_engine(connection_str)
+    engine = connection_str if hasattr(connection_str, "connect") else create_engine(connection_str)
+    with engine.connect() as conn:
+        df = pd.read_sql(text(sql), conn, params=params)
+
+    if not df.empty and "timestamp" in df.columns:
+        df["timestamp_iso"] = pd.to_datetime(df["timestamp"], unit="s", utc=True).dt.strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+
+    return df
+
+
+def load_monitoring_from_oracle(
+    connection_str,
+    device_id=None,
+    collection_id=None,
+    limit=0,
+):
+    """Carrega dados de monitoramento (sensor_monitoring_data).
+
+    Schema diferente de sensor_training_data: sem labels de treino,
+    com predicted_class, confidence, model_id.
+    Aceita connection_str como string SQLAlchemy OU engine ja criado.
+    """
+    import pandas as pd
+    from sqlalchemy import create_engine, text
+
+    sql = """
+        SELECT
+            id,
+            ts_epoch AS timestamp,
+            device_id,
+            temperature,
+            vibration,
+            accel_x_g,
+            accel_y_g,
+            accel_z_g,
+            gyro_x_dps,
+            gyro_y_dps,
+            gyro_z_dps,
+            sample_rate,
+            predicted_class,
+            confidence,
+            model_id,
+            window_id,
+            collection_id,
+            created_at
+        FROM sensor_monitoring_data
+        WHERE 1=1
+    """
+    params = {}
+    if device_id:
+        sql += " AND device_id = :device_id"
+        params["device_id"] = device_id
+    if collection_id:
+        sql += " AND collection_id = :collection_id"
+        params["collection_id"] = collection_id
+    sql += " ORDER BY ts_epoch ASC"
+
+    if limit and int(limit) > 0:
+        sql = f"SELECT * FROM ({sql}) WHERE ROWNUM <= :lim"
+        params["lim"] = int(limit)
+
+    engine = connection_str if hasattr(connection_str, "connect") else create_engine(connection_str)
     with engine.connect() as conn:
         df = pd.read_sql(text(sql), conn, params=params)
 
