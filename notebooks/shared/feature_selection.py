@@ -350,3 +350,59 @@ def select_features_anova_classwise_corr_pairwise_score_topk(
             print('Nenhuma feature selecionada.')
 
     return selected_features, df_scores, df_anova, df_significant
+
+
+def compute_on_off_coverage(df_features, selected_features, on_off_pairs=None, class_col='fan_state'):
+    """Diagnóstico de cobertura ON vs OFF para um conjunto de features selecionadas.
+
+    Para cada par (ROT_ON, ROT_OFF), calcula o d_max entre as features selecionadas
+    e identifica qual feature oferece a melhor separação.
+
+    Parameters
+    ----------
+    df_features      : DataFrame com as features extraídas (janelas)
+    selected_features: lista de features selecionadas
+    on_off_pairs     : lista de tuplas [(c_on, c_off), ...]; padrão = 3 pares ROT
+    class_col        : coluna de rótulo de classe (default 'fan_state')
+
+    Returns
+    -------
+    dict: {(c_on, c_off): {'d_max': float, 'best_feature': str, 'covered': bool}}
+    """
+    if on_off_pairs is None:
+        on_off_pairs = [
+            ('LOW_ROT_ON',    'LOW_ROT_OFF'),
+            ('MEDIUM_ROT_ON', 'MEDIUM_ROT_OFF'),
+            ('HIGH_ROT_ON',   'HIGH_ROT_OFF'),
+        ]
+
+    available_classes = set(df_features[class_col].unique())
+    result = {}
+
+    for c1, c2 in on_off_pairs:
+        if c1 not in available_classes or c2 not in available_classes:
+            result[(c1, c2)] = {'d_max': 0.0, 'best_feature': None, 'covered': False}
+            continue
+
+        g1 = df_features[df_features[class_col] == c1]
+        g2 = df_features[df_features[class_col] == c2]
+
+        best_d, best_feat = 0.0, None
+        for feat in selected_features:
+            a = g1[feat].dropna().values.astype(float)
+            b = g2[feat].dropna().values.astype(float)
+            na, nb = len(a), len(b)
+            if na < 2 or nb < 2:
+                continue
+            sp = np.sqrt(((na - 1) * np.var(a, ddof=1) + (nb - 1) * np.var(b, ddof=1)) / (na + nb - 2))
+            d = abs(a.mean() - b.mean()) / sp if sp > 1e-12 else 0.0
+            if d > best_d:
+                best_d, best_feat = d, feat
+
+        result[(c1, c2)] = {
+            'd_max': best_d,
+            'best_feature': best_feat,
+            'covered': best_d >= 1.5,
+        }
+
+    return result
