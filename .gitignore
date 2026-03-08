@@ -27,6 +27,66 @@ tools/bin/
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 
+# =============================================================================
+# CREDENCIAIS E SEGREDOS — NUNCA COMMITAR
+# =============================================================================
+
+# Variaveis de ambiente com senhas reais (commitar apenas os .example)
+.env
+.env.local
+.env.*.local
+.env.oracle
+.env.oracle.bak*
+
+# Oracle ADB Wallet — certificados e chaves de autenticacao mTLS
+# Estes arquivos dao acesso total ao banco sem senha adicional
+tools/cloud/wallet/cwallet.sso
+tools/cloud/wallet/ewallet.p12
+tools/cloud/wallet/ewallet.pem
+tools/cloud/wallet/keystore.jks
+tools/cloud/wallet/truststore.jks
+tools/cloud/wallet/sqlnet.ora
+tools/cloud/wallet/tnsnames.ora
+tools/cloud/wallet/ojdbc.properties
+
+# Qualquer wallet Oracle em qualquer subpasta
+**/wallet/*.sso
+**/wallet/*.p12
+**/wallet/*.pem
+**/wallet/*.jks
+**/wallet/*.pfx
+
+# Certificados e chaves privadas (formato geral)
+*.pem
+*.p12
+*.pfx
+*.key
+*.sso
+*.jks
+
+# Arquivos de ambiente Oracle/OCI com OCIDs e endpoints
+tools/cloud/adb_info.env
+**/adb_info*.env
+oci_config
+~/.oci/
+
+# AWS — credenciais e configuracao
+.aws/
+aws_credentials
+**/credentials.json
+**/*_credentials.json
+
+# Tokens e segredos genericos
+*.token
+*.secret
+*secret*.json
+*token*.json
+secrets/
+.secrets/
+
+# =============================================================================
 # NOTA: Repositorio PRIVADO.
-# device_config.json, wifi_profiles.json, .env.oracle e .vscode/
-# sao commitados intencionalmente para facilitar transferencia entre maquinas.
+# device_config.json, wifi_profiles.json e .vscode/ sao commitados
+# intencionalmente para facilitar transferencia entre maquinas.
+# .env.oracle NAO deve mais ser commitado — use .env.oracle.example como base.
+# =============================================================================
